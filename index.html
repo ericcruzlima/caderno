@@ -218,6 +218,10 @@
         .editor-spoiler {
             transition: all 0.2s ease;
         }
+        .wikilink-broken {
+            text-decoration: underline wavy #ef4444;
+            cursor: help;
+        }
     </style>
     <!-- Dynamic Theme Accelerator -->
     <script>
@@ -1946,6 +1950,18 @@
             const spoilerTitle = currentLang === 'pt-br' ? 'Spoiler: Clique para revelar' : 'Spoiler: Click to reveal';
             parsed = parsed.replace(/\|\|(.*?)\|\|/g, `<span class="markdown-spoiler" onclick="this.classList.toggle('revealed')" title="${spoilerTitle}">$1</span>`);
 
+            // Obsidian Wikilinks [[Note#Heading|Alias]]
+            parsed = parsed.replace(/\[\[((?:[^\]#|]*))(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (match, noteName, heading, alias) => {
+                const display = alias || (noteName + (heading ? '#' + heading : ''));
+                const targetNoteKey = noteName.trim() ? findNoteKeyByTitle(noteName.trim()) : activeNoteKey;
+                
+                if (targetNoteKey) {
+                    return `<a href="javascript:void(0)" onclick="handleWikilinkClick('${targetNoteKey}', '${escapeHTML(heading || '')}')" class="text-obsidian-accent hover:underline font-semibold wikilink">${escapeHTML(display)}</a>`;
+                } else {
+                    return `<span class="wikilink-broken text-red-400/80 italic" title="${currentLang === 'pt-br' ? 'Nota não encontrada' : 'Note not found'}">${escapeHTML(display)}</span>`;
+                }
+            });
+
             parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
             parsed = parsed.replace(/__(.*?)__/g, '<strong class="font-bold text-white">$1</strong>');
             parsed = parsed.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
@@ -2097,6 +2113,18 @@
             // Spoilers (always masked on inactive lines in hybrid)
             parsed = parsed.replace(/\|\|(.*?)\|\|/g, `<span class="bg-neutral-900 text-neutral-900 rounded border border-neutral-700 select-none">||$1||</span>`);
             
+            // Obsidian Wikilinks [[Note#Heading|Alias]]
+            parsed = parsed.replace(/\[\[((?:[^\]#|]*))(?:#([^\]|]*))?(?:\|([^\]]*))?\]\]/g, (match, noteName, heading, alias) => {
+                const display = alias || (noteName + (heading ? '#' + heading : ''));
+                const targetNoteKey = noteName.trim() ? findNoteKeyByTitle(noteName.trim()) : activeNoteKey;
+                
+                if (targetNoteKey) {
+                    return `<span class="text-obsidian-accent font-semibold border-b border-obsidian-accent/30">${escapeHTML(display)}</span>`;
+                } else {
+                    return `<span class="wikilink-broken text-red-400/80 italic">${escapeHTML(display)}</span>`;
+                }
+            });
+
             parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
             parsed = parsed.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
             parsed = parsed.replace(/==(.*?)==/g, '<mark class="bg-purple-900/40 text-purple-300 px-1 rounded">$1</mark>');
@@ -2355,6 +2383,27 @@
             searchFilter = document.getElementById('note-search').value;
             renderVaultList();
         }
+
+        window.findNoteKeyByTitle = function(title) {
+            return Object.keys(vault).find(key => vault[key].title.toLowerCase() === title.trim().toLowerCase());
+        };
+
+        window.handleWikilinkClick = function(noteKey, heading) {
+            if (vault[noteKey]) {
+                selectNote(noteKey);
+                if (heading) {
+                    setTimeout(() => {
+                        const lines = vault[noteKey].content.split('\n');
+                        const h = heading.trim().toLowerCase();
+                        const idx = lines.findIndex(l => {
+                            if (!l.startsWith('#')) return false;
+                            return l.replace(/^#+\s+/, '').trim().toLowerCase() === h;
+                        });
+                        if (idx !== -1) scrollEditorToLine(idx);
+                    }, 150);
+                }
+            }
+        };
 
         function selectNote(key) {
             activeNoteKey = key;
@@ -3112,9 +3161,9 @@
 
         function getWelcomeGuideMarkdown(lang) {
             if (lang === 'pt-br') {
-                return `# Bem-vindo ao Caderno 📓\n\n### 👥 Sincronização P2P em Tempo Real\n1. **Sessão Compartilhada:** Envie o link de colaboração para a sua equipe.\n2. **Resolução de Conflitos:** Edições simultâneas são mescladas de forma inteligente e automática.\n3. **Caret Dinâmico:** Seu cursor de digitação acompanha as edições dos seus colegas sem se perder!\n4. **Cursores ao Vivo:** Veja com precisão cirúrgica onde cada membro do time está editando em tempo real.\n\n### 🤫 Spoiler do Projeto\n- Aqui está um segredo de desenvolvimento do Caderno: ||O motor usa patches estruturais via Diff-Match-Patch (DMP) para sincronizar caracteres discretos diretamente sobre conexões WebRTC sem servidor centralizado!||`;
+                return `# Bem-vindo ao Caderno 📓\n\nEste é o seu novo espaço de trabalho colaborativo, agora muito mais potente e elegante. Explore as funcionalidades abaixo:\n\n### ✨ Modo Híbrido (O Novo Padrão)\n- **O melhor dos dois mundos:** Linhas inativas são renderizadas com estilo, enquanto a linha que você está editando volta ao Markdown puro para não atrapalhar sua escrita.\n- **Edição Direta:** Basta clicar em qualquer linha para transformá-la em código-fonte instantaneamente.\n\n### 👥 Sincronização P2P & Presença\n1. **Sessão Compartilhada:** Use o botão **Share** no topo para convidar sua equipe via WebRTC.\n2. **Cursores Inteligentes:** Veja onde seus colegas estão com cursores coloridos e indicadores de navegação.\n3. **Foco no Contexto:** Os cursores dos colegas só aparecem se vocês estiverem editando a *mesma* nota.\n\n### 🔗 Conectividade Obsidian\n- **Wikilinks:** Navegue entre notas usando \`[[Título da Nota]]\`.\n- **Links de Seção:** Use [[Roteiro do Projeto & Tarefas#Fase 2|este link de exemplo]] para pular direto para uma seção específica.\n- **Apelidos:** Personalize o texto do link com a sintaxe \`[[Nota|Nome Exibido]]\`.\n\n### 🤫 Spoilers & Segredos\n- **Mascaramento Automático:** Spoilers como ||este aqui|| agora se escondem automaticamente em linhas inativas. Eles só se revelam quando você move o cursor para a linha deles.\n\n### ⚙️ Interface Refinada\n- **Menu de Engrenagem:** Centralizamos o Idioma, Temas e modo Blame no ícone ⚙️.\n- **Menu de Usuário:** Clique no indicador de pares para gerenciar seu perfil e ver menções.\n- **Busca Central:** Pressione \`Ctrl + P\` para buscar em todo o seu caderno instantaneamente.\n\n--- \n*Dica: Experimente o modo **Split** (Dividido) se preferir a visualização clássica lado-a-lado!*`;
             } else {
-                return `# Welcome to Caderno 📓\n\n### 👥 Real-Time P2P Differential Sync\n1. **Shared Session:** Send the collaboration link to your team.\n2. **Conflict Resolution:** Simultaneous edits are now merged intelligently in real-time.\n3. **Dynamic Caret:** Your text cursor shifts gracefully while others type.\n4. **Live Presence Cursors:** See exactly where your team members are editing in real-time.\n\n### 🤫 Project Spoilers\n- Here is a development secret about Caderno: ||The engine relies on structural patching via Diff-Match-Patch (DMP) to synchronize discrete characters directly over WebRTC links with absolutely zero middleman servers!||`;
+                return `# Welcome to Caderno 📓\n\nThis is your new collaborative workspace, now significantly more powerful and polished. Explore the core features below:\n\n### ✨ Hybrid View (The New Standard)\n- **Best of Both Worlds:** Inactive lines are beautifully rendered, while the active line you're typing on stays in raw Markdown for distraction-free editing.\n- **Direct Interaction:** Just click any line to instantly reveal its source code.\n\n### 👥 P2P Sync & Presence\n1. **Shared Sessions:** Use the **Share** button at the top to invite your team via WebRTC.\n2. **Smart Cursors:** See exactly where your peers are with color-coded cursors and navigation alerts.\n3. **Contextual Focus:** Peer cursors are only visible when you are working on the *same* document.\n\n### 🔗 Obsidian Connectivity\n- **Wikilinks:** Navigate between your thoughts using \`[[Note Title]]\`.\n- **Heading Links:** Use [[Project Launch Roadmap#Phase 2|this example link]] to jump directly to a specific section.\n- **Aliases:** Customize link text using the \`[[Note|Display Name]]\` syntax.\n\n### 🤫 Spoilers & Secrets\n- **Auto-Masking:** Spoilers like ||this secret right here|| now automatically hide on inactive lines. They only reveal themselves when you move your cursor to their specific line.\n\n### ⚙️ Refined Interface\n- **Settings Cog:** We've centralized Language, Themes, and Blame mode under the ⚙️ icon.\n- **User Menu:** Click the peer indicator to manage your profile and check your mentions.\n- **Quick Search:** Press \`Ctrl + P\` to search through all notes and headings instantly.\n\n--- \n*Tip: Try the **Split** mode if you prefer the classic side-by-side preview!*`;
             }
         }
     </script>

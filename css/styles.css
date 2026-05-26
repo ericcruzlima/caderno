@@ -167,14 +167,19 @@ body {
 
 #markdown-textarea {
     caret-color: #e2e8f0;
-    color: transparent !important; /* Always transparent, overlay handles text */
+    color: transparent !important; /* Managed by JS in different modes */
+    transition: top 0.05s ease-out; /* Smooth follow */
+}
+
+.rendered-line-block {
+    position: relative;
+    width: 100%;
 }
 
 /* Used for overlay masking inside the textarea view */
 .editor-spoiler {
     transition: all 0.2s ease;
-}
-.wikilink-broken {
+}.wikilink-broken {
     text-decoration: underline wavy #ef4444;
     cursor: help;
 }

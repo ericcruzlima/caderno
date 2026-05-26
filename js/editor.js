@@ -67,95 +67,70 @@ function renderMarkdown(markdownText) {
 
     lines.forEach((line, index) => {
         const lineLengthIncludingNewline = line.length + 1;
+        let lineHTML = '';
 
         if (line.trim().startsWith('```')) {
             if (inCodeBlock) {
-                html += `<pre class="bg-neutral-900 border border-neutral-800 p-3 rounded-lg my-2 font-mono text-xs overflow-x-auto text-purple-300"><code>${escapeHTML(codeBlockContent)}</code></pre>`;
+                lineHTML = `<pre class="bg-neutral-900 border border-neutral-800 p-3 rounded-lg my-2 font-mono text-xs overflow-x-auto text-purple-300"><code>${escapeHTML(codeBlockContent)}</code></pre>`;
                 codeBlockContent = '';
                 inCodeBlock = false;
             } else {
                 inCodeBlock = true;
                 codeBlockStartLine = index;
             }
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-
-        if (inCodeBlock) {
+        } else if (inCodeBlock) {
             codeBlockContent += line + '\n';
-            charIndex += lineLengthIncludingNewline;
-            return;
+        } else if (line.trim() === '---') {
+            lineHTML = `<hr class="border-obsidian-border my-5" />`;
+        } else if (line.startsWith('# ')) {
+            lineHTML = `<h1 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(2), charIndex + 2)}</h1>`;
+        } else if (line.startsWith('## ')) {
+            lineHTML = `<h2 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(3), charIndex + 3)}</h2>`;
+        } else if (line.startsWith('### ')) {
+            lineHTML = `<h3 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(4), charIndex + 4)}</h3>`;
+        } else if (line.startsWith('#### ')) {
+            lineHTML = `<h4 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(5), charIndex + 5)}</h4>`;
+        } else {
+            const checkboxRegex = /^(\s*)-\s*\[([ xX])\]\s*(.*)$/;
+            const checkboxMatch = line.match(checkboxRegex);
+            if (checkboxMatch) {
+                const spaces = checkboxMatch[1].length;
+                const isChecked = checkboxMatch[2].toLowerCase() === 'x';
+                const offsetStart = charIndex + spaces + 5;
+                const mainTextWithBlame = getHTMLWithBlame(checkboxMatch[3], offsetStart);
+                const paddingLeft = spaces * 8; 
+
+                lineHTML = `
+                <div class="task-item flex items-start gap-2.5 py-1 px-1.5 rounded-md hover:bg-neutral-800/30 transition-all font-sans" style="margin-left: ${paddingLeft}px">
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} data-line-index="${index}" class="obsidian-checkbox mt-1 flex-shrink-0">
+                    <span class="text-gray-300 ${isChecked ? 'line-through text-neutral-500' : ''} text-sm leading-relaxed">${mainTextWithBlame}</span>
+                </div>`;
+            } else {
+                const bulletRegex = /^(\s*)-\s*(.*)$/;
+                const bulletMatch = line.match(bulletRegex);
+                if (bulletMatch) {
+                    const spaces = bulletMatch[1].length;
+                    const offsetStart = charIndex + spaces + 2;
+                    const mainTextWithBlame = getHTMLWithBlame(bulletMatch[2], offsetStart);
+                    const paddingLeft = spaces * 8;
+
+                    lineHTML = `
+                    <div class="bullet-item flex items-start gap-2.5 py-0.5 font-sans" style="margin-left: ${paddingLeft}px">
+                        <span class="text-obsidian-accent select-none mt-2 w-1.5 h-1.5 rounded-full bg-obsidian-accent flex-shrink-0"></span>
+                        <span class="text-gray-300 text-sm leading-relaxed">${mainTextWithBlame}</span>
+                    </div>`;
+                } else if (line.trim() === '') {
+                    lineHTML = `<div class="h-2"></div>`;
+                } else {
+                    lineHTML = `<p class="text-sm my-1 font-sans">${getHTMLWithBlame(line, charIndex)}</p>`;
+                }
+            }
         }
 
-        if (line.trim() === '---') {
-            html += `<hr class="border-obsidian-border my-5" />`;
-            charIndex += lineLengthIncludingNewline;
-            return;
+        if (lineHTML) {
+            html += `<div data-line-index="${index}" class="rendered-line-block">${lineHTML}</div>`;
         }
-
-        if (line.startsWith('# ')) {
-            html += `<h1 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(2), charIndex + 2)}</h1>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-        if (line.startsWith('## ')) {
-            html += `<h2 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(3), charIndex + 3)}</h2>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-        if (line.startsWith('### ')) {
-            html += `<h3 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(4), charIndex + 4)}</h3>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-        if (line.startsWith('#### ')) {
-            html += `<h4 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(5), charIndex + 5)}</h4>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-
-        const checkboxRegex = /^(\s*)-\s*\[([ xX])\]\s*(.*)$/;
-        const checkboxMatch = line.match(checkboxRegex);
-        if (checkboxMatch) {
-            const spaces = checkboxMatch[1].length;
-            const isChecked = checkboxMatch[2].toLowerCase() === 'x';
-            const offsetStart = charIndex + spaces + 5;
-            const mainTextWithBlame = getHTMLWithBlame(checkboxMatch[3], offsetStart);
-            const paddingLeft = spaces * 8; 
-
-            html += `
-            <div class="task-item flex items-start gap-2.5 py-1 px-1.5 rounded-md hover:bg-neutral-800/30 transition-all font-sans" style="margin-left: ${paddingLeft}px">
-                <input type="checkbox" ${isChecked ? 'checked' : ''} data-line-index="${index}" class="obsidian-checkbox mt-1 flex-shrink-0">
-                <span class="text-gray-300 ${isChecked ? 'line-through text-neutral-500' : ''} text-sm leading-relaxed">${mainTextWithBlame}</span>
-            </div>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-
-        const bulletRegex = /^(\s*)-\s*(.*)$/;
-        const bulletMatch = line.match(bulletRegex);
-        if (bulletMatch) {
-            const spaces = bulletMatch[1].length;
-            const offsetStart = charIndex + spaces + 2;
-            const mainTextWithBlame = getHTMLWithBlame(bulletMatch[2], offsetStart);
-            const paddingLeft = spaces * 8;
-
-            html += `
-            <div class="bullet-item flex items-start gap-2.5 py-0.5 font-sans" style="margin-left: ${paddingLeft}px">
-                <span class="text-obsidian-accent select-none mt-2 w-1.5 h-1.5 rounded-full bg-obsidian-accent flex-shrink-0"></span>
-                <span class="text-gray-300 text-sm leading-relaxed">${mainTextWithBlame}</span>
-            </div>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-
-        if (line.trim() === '') {
-            html += `<div class="h-2"></div>`;
-            charIndex += lineLengthIncludingNewline;
-            return;
-        }
-
-        html += `<p class="text-sm my-1 font-sans">${getHTMLWithBlame(line, charIndex)}</p>`;
+        
         charIndex += lineLengthIncludingNewline;
     });
 
@@ -362,65 +337,91 @@ function parseHybridInline(text) {
     return parsed;
 }
 
-let updateLineNumbersTimeout = null;
-window.updateLineNumbers = function() {
-    const textarea = document.getElementById('markdown-textarea');
-    const container = document.getElementById('line-numbers');
-    if (!textarea || !container) return;
-
-    if (updateLineNumbersTimeout) clearTimeout(updateLineNumbersTimeout);
-    
-    updateLineNumbersTimeout = setTimeout(() => {
-        const lines = textarea.value.split('\n');
-        
-        let mirror = document.getElementById('line-mirror');
-        if (!mirror) {
-            mirror = document.createElement('div');
-            mirror.id = 'line-mirror';
-            textarea.parentElement.appendChild(mirror);
-            mirror.style.position = 'absolute';
-            mirror.style.visibility = 'hidden';
-            mirror.style.pointerEvents = 'none';
-            mirror.style.top = '0';
-            mirror.style.left = '0';
-            mirror.style.zIndex = '-999';
-        }
-        
-        const computed = window.getComputedStyle(textarea);
-        mirror.style.fontFamily = computed.fontFamily;
-        mirror.style.fontSize = computed.fontSize;
-        mirror.style.lineHeight = computed.lineHeight;
-        mirror.style.padding = computed.padding;
-        mirror.style.border = 'none'; 
-        mirror.style.width = textarea.clientWidth + 'px'; 
-        mirror.style.whiteSpace = 'pre-wrap';
-        mirror.style.wordWrap = 'break-word';
-        mirror.style.boxSizing = 'border-box';
-
-        let mirrorHTML = '';
-        lines.forEach(line => {
-            mirrorHTML += `<div>${escapeHTML(line) || '&#8203;'}</div>`;
-        });
-        mirror.innerHTML = mirrorHTML;
-        
-        const childNodes = mirror.childNodes;
-        let numbersHTML = '';
-        
-        for (let i = 0; i < childNodes.length; i++) {
-            const height = childNodes[i].getBoundingClientRect().height;
-            numbersHTML += `<div style="height: ${height}px; display: flex; align-items: flex-start; justify-content: flex-end;">${i + 1}</div>`;
-        }
-        
-        container.innerHTML = numbersHTML;
-    }, 15);
-};
-
-window.handleEditorScroll = function() {
-    syncScroll('editor');
-    if (window.renderRemoteCursors) window.renderRemoteCursors();
+// Markdown Engine Extension: Textarea Overlay logic for Mentions and Spoilers
+window.updateEditorOverlays = function() {
     const textarea = document.getElementById('markdown-textarea');
     const overlays = document.getElementById('editor-overlays');
-    if (textarea && overlays) overlays.scrollTop = textarea.scrollTop;
+    const preview = document.getElementById('rendered-preview');
+    if (!textarea || !overlays) return;
+
+    const text = textarea.value;
+    const caretPos = textarea.selectionStart;
+    const activeLineIndex = text.substring(0, caretPos).split('\n').length - 1;
+
+    // Reset all lines in preview to visible first
+    const renderedLines = preview.querySelectorAll('.rendered-line-block');
+    renderedLines.forEach(el => el.style.visibility = 'visible');
+
+    if (viewMode === 'hybrid') {
+        const activeRenderedLine = preview.querySelector(`.rendered-line-block[data-line-index="${activeLineIndex}"]`);
+        
+        if (activeRenderedLine) {
+            // 1. Hide the rendered version of the current line
+            activeRenderedLine.style.visibility = 'hidden';
+
+            // 2. Position the "Edit Portal" (the overlay container) over the hidden line
+            // Overlays container becomes the clipping window
+            overlays.style.color = 'inherit';
+            overlays.style.pointerEvents = 'none';
+            overlays.style.backgroundColor = 'transparent';
+            
+            // Adjust overlays size and position to match the exact active line block
+            overlays.style.position = 'absolute';
+            overlays.style.top = (activeRenderedLine.offsetTop - preview.scrollTop) + 'px';
+            overlays.style.left = '32px'; // Align with preview max-w mx-auto padding (approx)
+            overlays.style.width = 'calc(100% - 64px)';
+            overlays.style.height = activeRenderedLine.offsetHeight + 'px';
+            overlays.style.overflow = 'hidden';
+            overlays.style.zIndex = '45';
+            overlays.innerHTML = ''; // Empty overlay text in hybrid mode
+
+            // 3. Align the textarea within this portal
+            // We shift the textarea UP so that its active line aligns with the portal's top
+            const textareaLineHeight = 24; // Match leading-6 (1.5rem * 16px)
+            const textareaOffset = -(activeLineIndex * textareaLineHeight) - 16; // 16px is textarea padding-top
+            
+            textarea.style.top = textareaOffset + 'px';
+            textarea.style.left = '16px'; // Align horizontal
+            textarea.style.width = 'calc(100% - 32px)';
+            textarea.style.color = '#e2e8f0'; // Make text visible for editing
+            textarea.style.backgroundColor = 'transparent';
+            textarea.style.zIndex = '50';
+            textarea.style.pointerEvents = 'auto';
+            
+            // Ensure caret is visible
+            textarea.style.caretColor = 'var(--accent-color)';
+        }
+    } else {
+        // Fallback for Edit mode or Split mode: standard behavior
+        textarea.style.top = '0';
+        textarea.style.left = '0';
+        textarea.style.width = '100%';
+        textarea.style.color = '#e2e8f0';
+        textarea.style.pointerEvents = 'auto';
+        
+        overlays.style.position = 'absolute';
+        overlays.style.inset = '0';
+        overlays.style.height = '100%';
+        overlays.style.width = '100%';
+        overlays.style.top = '0';
+        overlays.style.left = '0';
+        overlays.style.color = 'transparent'; // Standard overlay logic
+        
+        // Render traditional overlay for Edit mode
+        const lines = text.split('\n');
+        let finalHTML = '';
+        lines.forEach((line, index) => {
+            const isActive = index === activeLineIndex && document.activeElement === textarea;
+            let rawLine = escapeHTML(line);
+            rawLine = rawLine.replace(/\|\|(.*?)\|\|/g, (match) => {
+                if (isActive) return `<span class="border border-obsidian-accent/50 rounded px-0.5 text-gray-200 bg-obsidian-active/30">${match}</span>`;
+                return `<span class="bg-neutral-900 text-neutral-900 rounded border border-neutral-700 select-none">${match}</span>`;
+            });
+            finalHTML += `<div><span class="text-gray-200">${rawLine}</span></div>`;
+        });
+        overlays.innerHTML = finalHTML;
+        overlays.scrollTop = textarea.scrollTop;
+    }
 };
 
 function syncScroll(source) {
@@ -438,10 +439,15 @@ function syncScroll(source) {
         }
         lineNumbers.scrollTop = textarea.scrollTop;
     } else {
-        const pct = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
-        textarea.scrollTop = pct * (textarea.scrollHeight - textarea.clientHeight);
+        if (viewMode !== 'hybrid') {
+            const pct = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
+            textarea.scrollTop = pct * (textarea.scrollHeight - textarea.clientHeight);
+        }
         lineNumbers.scrollTop = textarea.scrollTop;
     }
+    
+    // Always refresh overlays on scroll
+    if (window.updateEditorOverlays) window.updateEditorOverlays();
 
     setTimeout(() => { isScrolling = false; }, 50);
 }
@@ -456,3 +462,4 @@ function scrollEditorToLine(lineIndex) {
     if (targetHeader) targetHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 window.scrollEditorToLine = scrollEditorToLine;
+

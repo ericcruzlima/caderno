@@ -810,6 +810,43 @@ function updateGlobalProgressTracker() {
 }
 window.updateGlobalProgressTracker = updateGlobalProgressTracker;
 
+window.handleSourceInput = function() {
+    const textarea = document.getElementById('markdown-textarea');
+    const oldText = vault[activeNoteKey].content;
+    const newText = textarea.value;
+    
+    vault[activeNoteKey].content = newText;
+    
+    if (window.updateBlameTracking) {
+        window.updateBlameTracking(activeNoteKey, oldText, newText, {
+            id: localUser.id,
+            name: localUser.name,
+            color: localUser.color
+        });
+    }
+
+    saveVaultLocalOnly();
+    if (window.broadcastNotePatch) {
+        window.broadcastNotePatch(activeNoteKey, oldText, newText);
+    }
+
+    if (window.renderActiveNote) window.renderActiveNote();
+    if (viewMode === 'hybrid' && window.updateEditorOverlays) window.updateEditorOverlays();
+    if (window.triggerAutocompleteCheck) window.triggerAutocompleteCheck(textarea);
+};
+
+window.handleTitleInput = function() {
+    const title = document.getElementById('note-title-input').value.trim();
+    if (title) {
+        vault[activeNoteKey].title = title;
+        if (window.saveVaultStructure) window.saveVaultStructure();
+        if (window.renderVaultList) window.renderVaultList();
+        document.getElementById('breadcrumb-filename').innerText = title + ".md";
+        document.getElementById('active-tab-title').innerText = title;
+        if (viewMode === 'hybrid' && window.updateEditorOverlays) window.updateEditorOverlays();
+    }
+};
+
 document.addEventListener('change', function(e) {
     if (e.target.classList.contains('obsidian-checkbox')) {
         const lineIndex = parseInt(e.target.getAttribute('data-line-index'));

@@ -201,6 +201,11 @@
             user-select: text;
             border: 1px solid #3f3f46;
         }
+        
+        /* Used for overlay masking inside the textarea view */
+        .editor-spoiler {
+            transition: all 0.2s ease;
+        }
     </style>
     <!-- Dynamic Theme Accelerator -->
     <script>
@@ -225,10 +230,13 @@
         })();
     </script>
 </head>
-<body class="h-full flex flex-col overflow-hidden">
+<body class="h-full flex flex-col overflow-hidden relative">
+
+    <!-- Real-time Multi-player Mouse Cursor Layer -->
+    <div id="mouse-cursors-layer" class="fixed inset-0 pointer-events-none z-[100] overflow-hidden"></div>
 
     <!-- Top Navigation Header -->
-    <header class="bg-obsidian-sidebar border-b border-obsidian-border px-3 py-2 flex items-center justify-between z-10 select-none">
+    <header class="bg-obsidian-sidebar border-b border-obsidian-border px-3 py-2 flex items-center justify-between z-10 select-none relative">
         <div class="flex items-center gap-3">
             <button id="btn-toggle-left" onclick="toggleSidebar('left-sidebar')" class="p-1.5 hover:bg-obsidian-active rounded transition-all border border-transparent" title="Toggle File Explorer (Ctrl+Shift+F)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]">
@@ -396,7 +404,7 @@
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col bg-obsidian-bg overflow-hidden">
+        <main class="flex-1 flex flex-col bg-obsidian-bg overflow-hidden relative">
             <div class="bg-obsidian-sidebar/40 border-b border-obsidian-border px-4 py-2 flex items-center justify-between select-none">
                 <div class="flex items-center gap-1.5 overflow-x-auto">
                     <div class="bg-obsidian-bg px-3 py-1.5 rounded-t-lg border border-b-0 border-obsidian-border text-xs font-semibold text-white flex items-center gap-2 max-w-[180px] truncate">
@@ -441,7 +449,7 @@
 
             <div class="flex-1 flex overflow-hidden relative">
                 <div id="editor-container" class="flex-1 flex flex-col overflow-hidden relative">
-                    <div class="p-4 bg-obsidian-bg border-b border-obsidian-border flex items-center justify-between gap-3 shrink-0">
+                    <div class="p-4 bg-obsidian-bg border-b border-obsidian-border flex items-center justify-between gap-3 shrink-0 relative z-40">
                         <div class="flex items-center gap-3 flex-1 overflow-hidden">
                             <span id="title-header-label" class="text-xs font-bold text-neutral-500 uppercase shrink-0">TITLE</span>
                             <input id="note-title-input" type="text" oninput="handleTitleInput()" class="bg-transparent font-extrabold text-lg text-white outline-none w-full border-b border-transparent hover:border-neutral-800 focus:border-obsidian-accent transition-colors py-0.5 truncate" placeholder="Untitled Note">
@@ -451,28 +459,34 @@
                             <span id="download-btn-text" class="hidden sm:inline">Download .md</span>
                         </button>
                     </div>
+                    
                     <div class="flex-1 flex overflow-hidden">
                         <div id="line-numbers" class="w-10 text-right pr-2 text-neutral-600 font-mono text-xs select-none py-4 border-r border-obsidian-border bg-obsidian-sidebar/20 shrink-0"></div>
                         <div class="flex-1 relative overflow-hidden flex flex-col">
                             <!-- Mention Dropdown Suggestions -->
-                            <div id="mention-autocomplete" class="absolute left-4 top-10 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-1 w-48 hidden z-30 divide-y divide-neutral-800"></div>
+                            <div id="mention-autocomplete" class="absolute left-4 top-10 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-1 w-48 hidden z-[60] divide-y divide-neutral-800"></div>
                             
-                            <textarea id="markdown-textarea" onscroll="handleEditorScroll()" onkeydown="handleEditorKeyDown(event)" oninput="handleSourceInput()" onkeyup="reportCursorMove()" onclick="reportCursorMove()" class="flex-1 bg-transparent text-gray-200 p-4 outline-none resize-none font-mono text-sm leading-6 overflow-y-auto block w-full" placeholder="Start writing markdown content..."></textarea>
-                            <div id="editor-cursors-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+                            <!-- Masking Overlay Engine for Editor (Spoilers & Mentions) -->
+                            <div id="editor-overlays" class="absolute inset-0 p-4 font-mono text-sm leading-6 whitespace-pre-wrap break-words pointer-events-none z-10 overflow-hidden text-transparent" aria-hidden="true"></div>
+                            
+                            <textarea id="markdown-textarea" onscroll="handleEditorScroll()" onkeydown="handleEditorKeyDown(event)" oninput="handleSourceInput()" onkeyup="reportCursorMove()" onclick="reportCursorMove()" class="absolute inset-0 bg-transparent text-gray-200 p-4 outline-none resize-none font-mono text-sm leading-6 overflow-y-auto block w-full z-20" placeholder="Start writing markdown content..."></textarea>
+                            
+                            <!-- Network Cursors Layer -->
+                            <div id="editor-cursors-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="pane-splitter" class="w-[1px] bg-obsidian-border h-full relative z-10"></div>
+                <div id="pane-splitter" class="w-[1px] bg-obsidian-border h-full relative z-40"></div>
 
-                <div id="preview-container" onscroll="syncScroll('preview')" class="flex-1 overflow-y-auto px-8 py-6 bg-obsidian-bg">
+                <div id="preview-container" onscroll="syncScroll('preview')" class="flex-1 overflow-y-auto px-8 py-6 bg-obsidian-bg relative z-40">
                     <div class="max-w-3xl mx-auto">
                         <div id="rendered-preview" class="markdown-preview pb-16"></div>
                     </div>
                 </div>
             </div>
 
-            <footer class="bg-obsidian-sidebar border-t border-obsidian-border px-4 py-1.5 flex justify-between items-center text-xs text-obsidian-textMuted font-mono select-none">
+            <footer class="bg-obsidian-sidebar border-t border-obsidian-border px-4 py-1.5 flex justify-between items-center text-xs text-obsidian-textMuted font-mono select-none relative z-40">
                 <div>
                     <span id="word-count">0 words</span>
                 </div>
@@ -493,7 +507,7 @@
     </div>
 
     <!-- COMMAND PALETTE MODAL -->
-    <div id="command-palette" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-start justify-center pt-24 z-50 transition-all duration-300">
+    <div id="command-palette" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-start justify-center pt-24 z-[150] transition-all duration-300">
         <div class="bg-obsidian-sidebar border border-obsidian-border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col mx-4">
             <div class="p-3 border-b border-obsidian-border flex items-center gap-2">
                 <i class="fa-solid fa-magnifying-glass text-obsidian-accent"></i>
@@ -505,7 +519,7 @@
     </div>
 
     <!-- CUSTOM PROFILE CONFIGURATION MODAL -->
-    <div id="profile-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div id="profile-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[150]">
         <div class="bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4">
             <h3 id="profile-modal-header" class="text-lg font-bold text-white mb-2">Configure Profile</h3>
             <p id="profile-modal-desc" class="text-xs text-neutral-400 mb-4">Set your permanent identifier and nickname for this notebook. Changes take effect immediately across all connected peers.</p>
@@ -543,10 +557,10 @@
     </div>
 
     <!-- TOAST NOTIFICATION STACK -->
-    <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-50"></div>
+    <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-[200]"></div>
 
     <!-- CONFIRM DELETE MODAL -->
-    <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+    <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-[150]">
         <div class="bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4">
             <h3 id="delete-modal-header" class="text-lg font-bold text-white mb-2">Delete Note?</h3>
             <p class="text-sm text-neutral-400 mb-6"><span id="delete-modal-desc-before">Are you sure you want to permanently delete</span> "<span id="delete-modal-note-title" class="text-gray-200 font-semibold">Note</span>"? <span id="delete-modal-desc-after">This action cannot be undone.</span></p>
@@ -624,7 +638,7 @@
         let myPeer = null;
         let connections = []; 
         let remotePeersData = {}; 
-        let ownCursorFlagEnabled = false; // Toggle to view own name flag
+        let ownCursorFlagEnabled = false; 
 
         // Standardized STUN servers to guarantee robust firewall hole-punching for WebRTC connections
         const peerConfig = {
@@ -682,7 +696,6 @@
         };
 
         function setupHostPeer() {
-            // Guarantee Peer ID persistence by passing localUser.id
             myPeer = new Peer(localUser.id, peerConfig);
             myPeer.on('open', (id) => {
                 const baseUrl = window.location.origin + window.location.pathname;
@@ -694,7 +707,6 @@
             myPeer.on('error', (err) => {
                 console.warn("Host engine setup error:", err);
                 if (err.type === 'unavailable-id') {
-                    // Try to regenerate ID or fall back to native auto ID in case of collisions
                     localStorage.removeItem('caderno_peer_id');
                     localUser.id = 'peer_' + Math.random().toString(36).substring(2, 9) + '_' + Math.random().toString(36).substring(2, 9);
                     localStorage.setItem('caderno_peer_id', localUser.id);
@@ -706,7 +718,6 @@
         }
 
         function setupClientPeer(targetRoomId) {
-            // Guarantee client-side Peer ID persistence by passing localUser.id
             myPeer = new Peer(localUser.id, peerConfig);
             myPeer.on('open', (id) => {
                 updateP2PStatusIndicator(true, currentLang === 'pt-br' ? "Conectando ao Hospedeiro..." : "Connecting to Host...");
@@ -715,7 +726,6 @@
                 setupPresenceHeartbeat();
             });
             
-            // Allow clients to accept connections too (Mesh node tolerance)
             myPeer.on('connection', handleNewConnection);
 
             myPeer.on('error', (err) => {
@@ -733,7 +743,6 @@
                 window.history.replaceState(null, '', cleanUrl);
                 updateP2PStatusIndicator(false);
                 
-                // Fallback to Host mode so they aren't stuck in a dead state
                 if (err.type === 'peer-unavailable' || err.type === 'network') {
                     setTimeout(() => {
                         if (!myPeer.destroyed) myPeer.destroy();
@@ -745,7 +754,7 @@
 
         function handleNewConnection(conn) {
             const onConnectionOpen = () => {
-                if (connections.includes(conn)) return; // Prevent double trigger
+                if (connections.includes(conn)) return;
                 connections.push(conn);
                 const labelStatus = currentLang === 'pt-br' ? `${connections.length} Par(es) Ativo(s)` : `${connections.length} Peer(s) Active`;
                 updateP2PStatusIndicator(true, labelStatus);
@@ -759,14 +768,13 @@
                         type: 'INITIAL_SYNC',
                         vault: window.vault,
                         activeNoteKey: window.activeNoteKey,
-                        blameMap: window.blameMap // Transmit Blame authorship telemetry
+                        blameMap: window.blameMap
                     };
                     const safePayload = encodePayload(syncObj);
                     if (safePayload) conn.send({ __safe_payload: safePayload });
                 }
             };
 
-            // Fix PeerJS Race Condition where 'open' fires before we can listen to it
             if (conn.open) {
                 onConnectionOpen();
             } else {
@@ -786,6 +794,7 @@
                     delete remotePeersData[conn.peer];
                     renderPresenceList();
                     renderRemoteCursors();
+                    if(window.renderRemoteMice) window.renderRemoteMice();
                 }
                 const status = connections.length > 0 ? 
                     (currentLang === 'pt-br' ? `${connections.length} Par(es) Ativo(s)` : `${connections.length} Peer(s) Active`) : 
@@ -813,8 +822,6 @@
                 case 'VAULT_UPDATE':
                     if (msg.vault) {
                         window.vault = msg.vault;
-                        // DO NOT hijack current activeNoteKey if the peer created or renamed a note!
-                        // This prevents forcefully pulling users into newly created documents!
                         if (msg.activeNoteKey && !window.vault[window.activeNoteKey]) {
                             window.activeNoteKey = msg.activeNoteKey;
                         }
@@ -830,7 +837,6 @@
                         const [patchedText, results] = window.dmp.patch_apply(msg.patches, currentText);
                         window.vault[msg.noteKey].content = patchedText;
 
-                        // Recalculate Blame telemetry matrix based on diffs
                         if (msg.authorId && msg.authorColor && msg.authorName) {
                             window.updateBlameTracking(msg.noteKey, currentText, patchedText, {
                                 id: msg.authorId,
@@ -839,7 +845,6 @@
                             });
                         }
 
-                        // Check if we were mentioned in this patch
                         window.scanForMentions(patchedText, msg.noteKey, msg.authorName || 'Um colaborador');
 
                         if (window.activeNoteKey === msg.noteKey) {
@@ -863,7 +868,6 @@
                                 reportCursorMove();
                             }
                         } else {
-                            // Background note updated natively. Sync global stats and lists cleanly.
                             window.updateGlobalProgressTracker();
                             window.renderVaultList();
                         }
@@ -875,7 +879,6 @@
                         const p = remotePeersData[senderConn.peer];
                         const newNote = msg.activeNoteKey || window.activeNoteKey;
                         
-                        // Detect Peer Note Jumping for Live Toasts Invitations
                         if (p && p.activeNote && p.activeNote !== newNote) {
                             if (newNote === window.activeNoteKey) {
                                 const existingToast = document.getElementById(`toast-nav-${senderConn.peer}`);
@@ -892,6 +895,8 @@
                             isTyping: msg.isTyping,
                             activeNote: newNote, 
                             cursorPos: msg.cursorPos !== undefined ? msg.cursorPos : p?.cursorPos,
+                            mouseX: p?.mouseX,
+                            mouseY: p?.mouseY,
                             timestamp: Date.now()
                         };
                         renderPresenceList();
@@ -904,7 +909,6 @@
                         const p = remotePeersData[senderConn.peer];
                         const newNote = msg.noteKey;
                         
-                        // Detect Fast Peer Cursor Jumps between files
                         if (p.activeNote && p.activeNote !== newNote) {
                             if (newNote === window.activeNoteKey) {
                                 const existingToast = document.getElementById(`toast-nav-${senderConn.peer}`);
@@ -919,11 +923,21 @@
                         renderRemoteCursors();
                     }
                     break;
+                    
+                case 'MOUSE_MOVE':
+                    if (senderConn.peer && remotePeersData[senderConn.peer]) {
+                        const p = remotePeersData[senderConn.peer];
+                        p.mouseX = msg.x;
+                        p.mouseY = msg.y;
+                        p.timestamp = Date.now();
+                        if (window.renderRemoteMice) window.renderRemoteMice();
+                    }
+                    break;
             }
 
             const params = new URLSearchParams(window.location.search || window.location.hash.substring(1));
             const isHost = !params.get('room') || myPeer.id === params.get('room');
-            if (isHost && msg.type !== 'PRESENCE' && msg.type !== 'CURSOR_MOVE') {
+            if (isHost && msg.type !== 'PRESENCE' && msg.type !== 'CURSOR_MOVE' && msg.type !== 'MOUSE_MOVE') {
                 broadcastMessageToPeers(msg, senderConn);
             }
         }
@@ -961,9 +975,69 @@
                 if (dirty) {
                     renderPresenceList();
                     renderRemoteCursors();
+                    if(window.renderRemoteMice) window.renderRemoteMice();
                 }
             }, 5000);
         }
+
+        /* Real-time Global Mouse Movement tracking Engine */
+        let mouseMoveTimeout;
+        let lastMousePos = { x: 0, y: 0 };
+        
+        document.addEventListener('mousemove', (e) => {
+            const x = e.clientX / window.innerWidth;
+            const y = e.clientY / window.innerHeight;
+            
+            if (Math.abs(lastMousePos.x - x) > 0.005 || Math.abs(lastMousePos.y - y) > 0.005) {
+                lastMousePos = { x, y };
+                
+                if (!mouseMoveTimeout) {
+                    mouseMoveTimeout = setTimeout(() => {
+                        if (myPeer && !myPeer.destroyed && connections.length > 0) {
+                            broadcastMessageToPeers({
+                                type: 'MOUSE_MOVE',
+                                peerId: myPeer.id,
+                                x: x,
+                                y: y
+                            });
+                        }
+                        mouseMoveTimeout = null;
+                    }, 50); // 20 FPS throttling for performance
+                }
+            }
+        });
+        
+        window.renderRemoteMice = function() {
+            let layer = document.getElementById('mouse-cursors-layer');
+            if (!layer) return;
+            
+            layer.innerHTML = '';
+            
+            Object.keys(remotePeersData).forEach(peerId => {
+                const p = remotePeersData[peerId];
+                if (p.mouseX !== undefined && p.mouseY !== undefined) {
+                    const x = p.mouseX * window.innerWidth;
+                    const y = p.mouseY * window.innerHeight;
+                    
+                    const mouseEl = document.createElement('div');
+                    mouseEl.className = 'absolute transition-all duration-75 ease-linear flex flex-col items-start';
+                    mouseEl.style.transform = `translate(${x}px, ${y}px)`;
+                    
+                    const arrow = `<svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.4))">
+                        <path d="M1 1L6.5 18L9 11L15 8L1 1Z" fill="${p.color}" stroke="white" stroke-width="1.5"/>
+                    </svg>`;
+                    
+                    const initial = p.name ? p.name.substring(0, 2).toUpperCase() : '??';
+                    const badge = `<div class="mt-1 ml-3 flex items-center bg-obsidian-sidebar border-2 shadow-lg rounded-full px-1.5 py-0.5" style="border-color: ${p.color}">
+                        <div class="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shrink-0" style="background-color: ${p.color}">${initial}</div>
+                        <span class="ml-1.5 text-[10px] font-bold text-white pr-1">${escapeHTML(p.name.split(' ')[0])}</span>
+                    </div>`;
+                    
+                    mouseEl.innerHTML = arrow + badge;
+                    layer.appendChild(mouseEl);
+                }
+            });
+        };
 
         let cursorMoveTimeout;
         window.reportCursorMove = function() {
@@ -973,6 +1047,10 @@
             
             if (localUser.cursorPos !== pos) {
                 localUser.cursorPos = pos;
+                
+                // Immediately refresh local cursors to render "My Cursor" fast
+                if (window.renderRemoteCursors) window.renderRemoteCursors();
+                
                 clearTimeout(cursorMoveTimeout);
                 cursorMoveTimeout = setTimeout(() => {
                     if (!myPeer || myPeer.destroyed) return;
@@ -986,7 +1064,6 @@
             }
         };
 
-        // DOM Logic to calculate exact X/Y for overlaying live colored cursors on the textarea
         function getCaretCoordinates(element, position) {
             let mirror = document.getElementById('caret-mirror');
             if (!mirror) {
@@ -1000,7 +1077,6 @@
             mirror.style.fontSize = style.fontSize;
             mirror.style.lineHeight = style.lineHeight;
             mirror.style.padding = style.padding;
-            // Force precise matching size without scrollbar discrepancy
             mirror.style.width = element.clientWidth + 'px'; 
             mirror.style.boxSizing = style.boxSizing;
 
@@ -1027,10 +1103,10 @@
             editorContainer.innerHTML = '';
             document.querySelectorAll('.preview-remote-cursor').forEach(el => el.remove());
 
-            // Render local user cursor if toggled on
+            // Local user cursor feature properly fixed
             if (ownCursorFlagEnabled && document.activeElement === textarea) {
                 try {
-                    const coords = getCaretCoordinates(textarea, textarea.selectionStart);
+                    const coords = getCaretCoordinates(textarea, localUser.cursorPos);
                     const cursorEl = document.createElement('div');
                     cursorEl.className = 'remote-cursor shadow-sm';
                     cursorEl.style.backgroundColor = localUser.color;
@@ -1041,7 +1117,7 @@
                     const flagEl = document.createElement('div');
                     flagEl.className = 'remote-cursor-flag';
                     flagEl.style.backgroundColor = localUser.color;
-                    flagEl.innerText = localUser.name.split(' ')[0] + " (Você)";
+                    flagEl.innerText = localUser.name.split(' ')[0] + (currentLang === 'pt-br' ? " (Você)" : " (You)");
                     
                     cursorEl.appendChild(flagEl);
                     editorContainer.appendChild(cursorEl);
@@ -1052,7 +1128,6 @@
                 const p = remotePeersData[peerId];
                 if (p.activeNote === activeNoteKey && p.cursorPos !== undefined) {
                     
-                    // 1. Render Editor Textarea Cursor
                     try {
                         const coords = getCaretCoordinates(textarea, p.cursorPos);
                         const cursorEl = document.createElement('div');
@@ -1065,13 +1140,12 @@
                         const flagEl = document.createElement('div');
                         flagEl.className = 'remote-cursor-flag';
                         flagEl.style.backgroundColor = p.color;
-                        flagEl.innerText = p.name.split(' ')[0]; // Display First Name
+                        flagEl.innerText = p.name.split(' ')[0]; 
                         
                         cursorEl.appendChild(flagEl);
                         editorContainer.appendChild(cursorEl);
-                    } catch(e) { console.warn("Could not render editor cursor", e); }
+                    } catch(e) {}
 
-                    // 2. Render Live Floating Preview Cursor badge next to the block
                     try {
                         const content = window.vault[activeNoteKey].content;
                         let lineIndex = (content.substring(0, p.cursorPos).match(/\n/g) || []).length;
@@ -1098,7 +1172,7 @@
                             
                             targetEl.appendChild(indicator);
                         }
-                    } catch(e) { console.warn("Could not render preview cursor", e); }
+                    } catch(e) {}
                 }
             });
         };
@@ -1124,7 +1198,6 @@
                 div.className = `w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-obsidian-sidebar shrink-0 cursor-help`;
                 div.style.backgroundColor = p.color;
                 
-                // Active note name lookup safeguard 
                 const noteName = window.vault[p.activeNote]?.title || "Unknown File";
                 div.title = `${p.name} - ${currentLang === 'pt-br' ? 'Editando' : 'Editing'}: ${noteName}`;
                 div.innerText = p.name.slice(0, 2).toUpperCase();
@@ -1158,7 +1231,6 @@
             }
         }
 
-        // Trigger Granular Patch Updates to Peers
         window.broadcastNotePatch = function(noteKey, oldText, newText) {
             const patches = window.dmp.patch_make(oldText, newText);
             
@@ -1187,8 +1259,6 @@
             broadcastMessageToPeers({
                 type: 'VAULT_UPDATE',
                 vault: window.vault,
-                // NEVER broadcast the newly updated note as activeNoteKey, 
-                // preventing pushing peers into files they did not ask to enter!
                 activeNoteKey: null,
                 blameMap: window.blameMap
             });
@@ -1222,14 +1292,12 @@
             root.style.setProperty('--accent-gradient-end', palette.gradientEnd);
             localStorage.setItem('caderno_theme_accent', themeKey);
             
-            // Hide the dropdown after selection
             const dropdown = document.getElementById('theme-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
             
             showToast(currentLang === 'pt-br' ? "Tema alterado com sucesso!" : "Theme accent updated successfully!", "success");
         };
 
-        // Add a general window click listener to close the dropdown when clicking outside
         window.addEventListener('click', function(e) {
             const dropdown = document.getElementById('theme-dropdown');
             const pickerBtn = document.getElementById('btn-theme-picker');
@@ -1287,7 +1355,6 @@
                 downloadTooltip: "Download note as .md file",
                 downloadBtnLabel: "Download .md",
                 
-                // Profile translations
                 profileBtn: "Profile",
                 profileTitle: "Configure Profile",
                 profileDesc: "Set your permanent identifier and nickname for this notebook. Changes take effect immediately across all connected peers.",
@@ -1340,7 +1407,6 @@
                 downloadTooltip: "Baixar nota como arquivo .md",
                 downloadBtnLabel: "Baixar .md",
                 
-                // Profile translations
                 profileBtn: "Perfil",
                 profileTitle: "Personalizar Perfil",
                 profileDesc: "Defina seu identificador permanente e apelido para este caderno. Mudanças tomam efeito imediato entre todos os participantes.",
@@ -1399,7 +1465,6 @@
             document.getElementById('btn-reading-mode').innerHTML = `<i class="fa-solid fa-book-open mr-1"></i> ` + t.modeReading;
             document.getElementById('btn-split-mode').innerHTML = `<i class="fa-solid fa-columns mr-1"></i> ` + t.modeSplit;
 
-            // Profile inputs
             document.getElementById('profile-btn-text').innerText = t.profileBtn;
             document.getElementById('profile-modal-header').innerText = t.profileTitle;
             document.getElementById('profile-modal-desc').innerText = t.profileDesc;
@@ -1450,11 +1515,9 @@
         let isScrolling = false;
         let deleteCandidateKey = null;
 
-        // Blame tracking map schema: { noteKey: [ { authorId, name, color, charLength } ] }
         var blameMap = {};
         let blameModeEnabled = false;
 
-        // Mention Tracking: [ { noteKey, authorName, text, timestamp, read: false } ]
         var userMentions = [];
 
         window.initializeVaultState = function() {
@@ -1503,11 +1566,11 @@
             setViewMode("split");
             window.initP2PEngine();
 
-            // Setup ResizeObserver for smart line-wrapping detection
             const textarea = document.getElementById('markdown-textarea');
             if (textarea) {
                 new ResizeObserver(() => {
                     if (window.updateLineNumbers) window.updateLineNumbers();
+                    if (window.updateEditorOverlays) window.updateEditorOverlays();
                 }).observe(textarea);
             }
 
@@ -1532,7 +1595,6 @@
                 }
             });
 
-            // Click outside drop-down listener
             document.addEventListener('click', function(e) {
                 const mentionsDropdown = document.getElementById('mentions-dropdown');
                 const mentionsBell = document.getElementById('btn-mentions-bell');
@@ -1556,7 +1618,6 @@
             saveVaultLocalOnly();
         }
 
-        // Dedicated local saver. Prevents unnecessary network broadcasting when simply switching tabs.
         function saveVaultLocalOnly() {
             localStorage.setItem("caderno_vault", JSON.stringify(vault));
             localStorage.setItem("caderno_active_key", activeNoteKey);
@@ -1572,7 +1633,6 @@
             }
         }
 
-        /* Git Blame Tracking: Update authorship map linearly with character-level accuracy using DMP */
         window.updateBlameTracking = function(noteKey, oldText, newText, author) {
             if (!blameMap[noteKey]) {
                 blameMap[noteKey] = [];
@@ -1580,7 +1640,6 @@
 
             let currentMap = blameMap[noteKey];
 
-            // If empty map, map everything to current length as default
             if (currentMap.length === 0 && oldText.length > 0) {
                 currentMap.push({
                     authorId: 'system',
@@ -1597,11 +1656,11 @@
             let oldMapIndex = 0;
 
             diffs.forEach(diff => {
-                const op = diff[0]; // 0: Equal, 1: Insert, -1: Delete
+                const op = diff[0]; 
                 const text = diff[1];
                 let length = text.length;
 
-                if (op === 0) { // Keep existing authorship mapped characters
+                if (op === 0) { 
                     while (length > 0 && oldMapIndex < currentMap.length) {
                         const segment = currentMap[oldMapIndex];
                         const available = segment.length;
@@ -1621,14 +1680,14 @@
                             length = 0;
                         }
                     }
-                } else if (op === 1) { // Inserted characters are allocated to current modifier
+                } else if (op === 1) { 
                     newMap.push({
                         authorId: author.id,
                         name: author.name,
                         color: author.color,
                         length: length
                     });
-                } else if (op === -1) { // Consume/skip characters from current map
+                } else if (op === -1) { 
                     while (length > 0 && oldMapIndex < currentMap.length) {
                         const segment = currentMap[oldMapIndex];
                         const available = segment.length;
@@ -1644,7 +1703,6 @@
                 }
             });
 
-            // Merge consecutive fragments with identical author
             let consolidatedMap = [];
             newMap.forEach(seg => {
                 if (seg.length === 0) return;
@@ -1660,7 +1718,10 @@
             saveVaultLocalOnly();
         };
 
-        // Render Markdown content with inline Blame overlays
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         function renderMarkdown(markdownText) {
             if (!markdownText) return `<p class="text-neutral-500 italic">${i18n[currentLang].noContent}</p>`;
             
@@ -1670,7 +1731,6 @@
             let codeBlockContent = '';
             let codeBlockStartLine = 0;
 
-            // Generate character map index mapping for active note if Blame mode is active
             let charIndex = 0;
             const currentBlame = blameMap[activeNoteKey] || [];
 
@@ -1683,7 +1743,6 @@
                 let processed = 0;
                 let resultHTML = '';
 
-                // Find where startOffset starts in blame array
                 let accumulated = 0;
                 let blameIdx = 0;
 
@@ -1702,7 +1761,6 @@
                         const subText = text.substring(processed, processed + lenInSegment);
                         const safeSub = parseInlineElements(subText);
                         
-                        // Semi transparent version of user color for text selection highlighters
                         const hexColor = seg.color;
                         let r = 100, g = 100, b = 100;
                         if (hexColor.startsWith('#')) {
@@ -1728,7 +1786,7 @@
             }
 
             lines.forEach((line, index) => {
-                const lineLengthIncludingNewline = line.length + 1; // +1 for the newline character
+                const lineLengthIncludingNewline = line.length + 1;
 
                 if (line.trim().startsWith('```')) {
                     if (inCodeBlock) {
@@ -1755,7 +1813,6 @@
                     return;
                 }
 
-                // Render structure headers with Blame mapping overlays
                 if (line.startsWith('# ')) {
                     html += `<h1 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${getHTMLWithBlame(line.slice(2), charIndex + 2)}</h1>`;
                     charIndex += lineLengthIncludingNewline;
@@ -1782,7 +1839,7 @@
                 if (checkboxMatch) {
                     const spaces = checkboxMatch[1].length;
                     const isChecked = checkboxMatch[2].toLowerCase() === 'x';
-                    const offsetStart = charIndex + spaces + 5; // - [ ] or - [x]
+                    const offsetStart = charIndex + spaces + 5;
                     const mainTextWithBlame = getHTMLWithBlame(checkboxMatch[3], offsetStart);
                     const paddingLeft = spaces * 8; 
 
@@ -1799,7 +1856,7 @@
                 const bulletMatch = line.match(bulletRegex);
                 if (bulletMatch) {
                     const spaces = bulletMatch[1].length;
-                    const offsetStart = charIndex + spaces + 2; // - 
+                    const offsetStart = charIndex + spaces + 2;
                     const mainTextWithBlame = getHTMLWithBlame(bulletMatch[2], offsetStart);
                     const paddingLeft = spaces * 8;
 
@@ -1828,7 +1885,6 @@
         function parseInlineElements(text) {
             let parsed = escapeHTML(text);
             
-            // Render Spoiler markup ||spoiler|| BEFORE parsing other formats
             const spoilerTitle = currentLang === 'pt-br' ? 'Spoiler: Clique para revelar' : 'Spoiler: Click to reveal';
             parsed = parsed.replace(/\|\|(.*?)\|\|/g, `<span class="markdown-spoiler" onclick="this.classList.toggle('revealed')" title="${spoilerTitle}">$1</span>`);
 
@@ -1840,11 +1896,14 @@
             parsed = parsed.replace(/`(.*?)`/g, '<code class="bg-neutral-800 border border-neutral-700 px-1.5 py-0.5 rounded font-mono text-xs text-purple-300">$1</code>');
             parsed = parsed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-purple-400 hover:text-purple-300 font-semibold underline inline-flex items-center gap-1">$1 <i class="fa-solid fa-external-link text-[10px] opacity-70"></i></a>');
             
-            // Render Mentions cleanly as highlighted badge with real name from metadata map
-            parsed = parsed.replace(/&lt;mention::(peer_[a-z0-9_]+)&gt;/g, (match, peerId) => {
-                let name = peerId === localUser.id ? localUser.name : (remotePeersData[peerId]?.name || peerId);
-                let color = peerId === localUser.id ? localUser.color : (remotePeersData[peerId]?.color || 'var(--accent-color)');
-                return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-obsidian-active text-white border-l-2" style="border-color: ${color}">@${escapeHTML(name)}</span>`;
+            // Render native @Name Mentions cleanly 
+            parsed = parsed.replace(/@([A-Za-z0-9_À-ÿ]+(?: [A-Za-z0-9_À-ÿ]+)?)/g, (match, name) => {
+                let color = 'var(--accent-color)';
+                const peers = [localUser, ...Object.values(remotePeersData)];
+                const found = peers.find(p => p.name === name);
+                if (found) color = found.color;
+                
+                return `<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold bg-obsidian-active text-white border-l-2 shadow-sm" style="border-color: ${color}">${escapeHTML(match)}</span>`;
             });
 
             return parsed;
@@ -1878,15 +1937,42 @@
             preview.innerHTML = renderMarkdown(note.content);
 
             if (window.updateLineNumbers) window.updateLineNumbers();
+            if (window.updateEditorOverlays) window.updateEditorOverlays();
+            
             updateWordCount(note.content);
             renderOutline(note.content);
             updateChecklistProgress(note.content);
             
-            // Re-apply live cursors onto the newly rendered DOM payload
             if (window.renderRemoteCursors) window.renderRemoteCursors();
         }
 
-        // Smart Line-Wrap Tracking Algorithm
+        // Markdown Engine Extension: Textarea Overlay logic for Mentions and Spoilers
+        window.updateEditorOverlays = function() {
+            const textarea = document.getElementById('markdown-textarea');
+            const overlays = document.getElementById('editor-overlays');
+            if (!textarea || !overlays) return;
+
+            let html = escapeHTML(textarea.value);
+            
+            // 1. Highlight Mentions visually keeping the text underneath matching
+            html = html.replace(/@([A-Za-z0-9_À-ÿ]+(?: [A-Za-z0-9_À-ÿ]+)?)/g, (match) => {
+                return `<span class="bg-obsidian-accent/20 border-b border-obsidian-accent/50 text-transparent rounded px-0.5">${match}</span>`;
+            });
+
+            // 2. Block/mask Spoilers dynamically
+            html = html.replace(/\|\|(.*?)\|\|/g, (match) => {
+                const title = currentLang === 'pt-br' ? 'Spoiler: Clique para revelar' : 'Spoiler: Click to reveal';
+                return `<span class="editor-spoiler bg-neutral-900 text-neutral-900 pointer-events-auto cursor-pointer rounded border border-neutral-700 select-none transition-colors" onclick="this.classList.toggle('bg-neutral-900'); this.classList.toggle('text-neutral-900'); this.classList.toggle('bg-transparent'); this.classList.toggle('text-transparent');" title="${title}">${match}</span>`;
+            });
+
+            if (textarea.value.endsWith('\n')) {
+                html += '<br/>';
+            }
+
+            overlays.innerHTML = html;
+            overlays.scrollTop = textarea.scrollTop;
+        };
+
         let updateLineNumbersTimeout = null;
         window.updateLineNumbers = function() {
             const textarea = document.getElementById('markdown-textarea');
@@ -1911,7 +1997,6 @@
                     mirror.style.zIndex = '-999';
                 }
                 
-                // Copy critical styling measurements to simulate exact word wraps natively
                 const computed = window.getComputedStyle(textarea);
                 mirror.style.fontFamily = computed.fontFamily;
                 mirror.style.fontSize = computed.fontSize;
@@ -1925,7 +2010,6 @@
 
                 let mirrorHTML = '';
                 lines.forEach(line => {
-                    // Inject zero-width space on empty lines to accurately measure blank line heights
                     mirrorHTML += `<div>${escapeHTML(line) || '&#8203;'}</div>`;
                 });
                 mirror.innerHTML = mirrorHTML;
@@ -1935,7 +2019,6 @@
                 
                 for (let i = 0; i < childNodes.length; i++) {
                     const height = childNodes[i].getBoundingClientRect().height;
-                    // Provide the line number, aligned to the top of the wrapping text block
                     numbersHTML += `<div style="height: ${height}px; display: flex; align-items: flex-start; justify-content: flex-end;">${i + 1}</div>`;
                 }
                 
@@ -1948,7 +2031,6 @@
             document.getElementById('word-count').innerText = `${words} ${i18n[currentLang].wordCount}`;
         }
 
-        /* Checkbox Click with Diff/Patch Sync Upgrade */
         document.addEventListener('change', function(e) {
             if (e.target.classList.contains('obsidian-checkbox')) {
                 const lineIndex = parseInt(e.target.getAttribute('data-line-index'));
@@ -1986,10 +2068,12 @@
             }
         });
 
-        // Trigger Sync AND reposition overlay cursors when the editor area is scrolled
         window.handleEditorScroll = function() {
             syncScroll('editor');
             if (window.renderRemoteCursors) window.renderRemoteCursors();
+            const textarea = document.getElementById('markdown-textarea');
+            const overlays = document.getElementById('editor-overlays');
+            if (textarea && overlays) overlays.scrollTop = textarea.scrollTop;
         };
 
         function syncScroll(source) {
@@ -2133,11 +2217,10 @@
 
         function selectNote(key) {
             activeNoteKey = key;
-            saveVaultLocalOnly(); // Does NOT broadcast content payload to network unnecessarily 
+            saveVaultLocalOnly(); 
             renderVaultList();
             loadActiveNote();
             
-            // Clean up any pending navigation toast invites targeted to the note we just navigated to
             document.querySelectorAll('[id^="toast-nav-"]').forEach(toast => {
                 if (toast.dataset.targetNote === key) toast.remove();
             });
@@ -2155,7 +2238,6 @@
                 content: noteContent
             };
 
-            // Initialize local blame attribution
             window.updateBlameTracking(id, "", noteContent, {
                 id: localUser.id,
                 name: localUser.name,
@@ -2164,7 +2246,6 @@
 
             activeNoteKey = id;
             
-            // Critical correction: Save locally AND broadcast struct update (but DO NOT force jump peers)
             saveVaultLocalOnly();
             if (window.triggerP2PVaultStructureUpdate) {
                 window.triggerP2PVaultStructureUpdate();
@@ -2205,7 +2286,6 @@
             const cleanedTitle = newTitle.trim() || originalTitle;
             vault[key].title = cleanedTitle;
             
-            // Critical correction: Save locally AND broadcast struct update without forcing navigation
             saveVaultLocalOnly();
             if (window.triggerP2PVaultStructureUpdate) {
                 window.triggerP2PVaultStructureUpdate();
@@ -2233,7 +2313,7 @@
             if (!deleteCandidateKey) return;
             const title = vault[deleteCandidateKey].title;
             delete vault[deleteCandidateKey];
-            delete blameMap[deleteCandidateKey]; // Clean telemetry
+            delete blameMap[deleteCandidateKey]; 
             
             if (activeNoteKey === deleteCandidateKey) {
                 const keys = Object.keys(vault);
@@ -2247,7 +2327,6 @@
             showToast(i18n[currentLang].toastDeleted.replace("{title}", title), "info");
         }
 
-        /* Diff-Match-Patch Input Source Capture */
         function handleSourceInput() {
             const textarea = document.getElementById('markdown-textarea');
             const newText = textarea.value;
@@ -2267,7 +2346,7 @@
                 window.broadcastNotePatch(activeNoteKey, oldText, newText);
             }
 
-            renderActiveNote(); // Triggers updateLineNumbers & syncing
+            renderActiveNote(); 
             triggerAutocompleteCheck(textarea);
         }
 
@@ -2415,7 +2494,6 @@
             showToast(currentLang === 'pt-br' ? "Link de sessão copiado! Envie para seus companheiros." : "Session link copied to clipboard! Share it with your friends.", "success");
         };
 
-        /* Markdown note downloader module */
         window.downloadNote = function(event, key) {
             if (event) event.stopPropagation();
             const note = vault[key];
@@ -2445,7 +2523,6 @@
             }
         };
 
-        // Standard auto-disappearing Toast stack logic
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -2457,12 +2534,10 @@
             setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
-        // Custom Peer Navigation Toast module mapping
         window.showNavigationToast = function(peerId, peerName, targetNoteKey) {
             const existingId = `toast-nav-${peerId}`;
             let toast = document.getElementById(existingId);
             
-            // Override existing navigation toast for this peer rapidly if they're moving
             if (toast) {
                 clearTimeout(parseInt(toast.dataset.timeoutId));
                 toast.remove();
@@ -2473,7 +2548,7 @@
             toast = document.createElement('div');
             toast.id = existingId;
             toast.dataset.targetNote = targetNoteKey;
-            toast.className = `p-3.5 rounded-lg shadow-2xl flex flex-col gap-2 text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 select-none bg-obsidian-active text-white border border-obsidian-accent/60 shadow-xl shadow-obsidian-accent/10 z-50`;
+            toast.className = `p-3.5 rounded-lg shadow-2xl flex flex-col gap-2 text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 select-none bg-obsidian-active text-white border border-obsidian-accent/60 shadow-xl shadow-obsidian-accent/10 z-[200]`;
             
             const msg = currentLang === 'pt-br' ? 
                 `<span class="truncate"><b>${escapeHTML(peerName)}</b> foi para <br><span class="text-obsidian-accent">${escapeHTML(targetNoteName)}</span></span>` : 
@@ -2493,7 +2568,6 @@
             
             setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
             
-            // Visible length adjusted to a longer 20-seconds for peer navigations 
             const timeout = setTimeout(() => {
                 if (document.getElementById(existingId)) {
                     toast.classList.add('opacity-0', 'translate-y-2'); 
@@ -2515,7 +2589,6 @@
             }
         };
 
-        /* Mentions UI Toggle Dropdowns */
         window.toggleMentionsDropdown = function(event) {
             if (event) event.stopPropagation();
             const dropdown = document.getElementById('mentions-dropdown');
@@ -2523,10 +2596,8 @@
         };
 
         window.scanForMentions = function(text, noteKey, authorName) {
-            // Mention pattern: <mention::PEER_ID>
-            const pattern = new RegExp(`<mention::(${localUser.id})>`, 'g');
+            const pattern = new RegExp(`@${escapeRegExp(localUser.name)}\\b`, 'i');
             if (pattern.test(text)) {
-                // Check if we already logged this mention recently to avoid duplicate alerts
                 const isDuplicate = userMentions.some(m => m.noteKey === noteKey && m.authorName === authorName && (Date.now() - m.timestamp < 10000));
                 if (!isDuplicate) {
                     userMentions.unshift({
@@ -2589,7 +2660,6 @@
             updateMentionsUI();
         };
 
-        /* Personal Own Cursor Toggle Option */
         window.toggleOwnCursorFlag = function() {
             ownCursorFlagEnabled = !ownCursorFlagEnabled;
             const icon = document.getElementById('btn-own-cursor-icon');
@@ -2598,10 +2668,13 @@
             } else {
                 icon.className = "fa-solid fa-toggle-off text-neutral-500";
             }
+            
+            // Force cursor position sync & render
+            const textarea = document.getElementById('markdown-textarea');
+            if (textarea) localUser.cursorPos = textarea.selectionStart;
             renderRemoteCursors();
         };
 
-        /* Toggle Blame overlay highlight mode */
         window.toggleBlameMode = function() {
             blameModeEnabled = !blameModeEnabled;
             const btn = document.getElementById('btn-blame-toggle');
@@ -2613,7 +2686,6 @@
             renderActiveNote();
         };
 
-        /* Profile Modal Operations */
         window.openProfileModal = function() {
             document.getElementById('profile-nickname-input').value = localUser.name;
             selectProfileColor(localUser.color);
@@ -2627,13 +2699,11 @@
         };
 
         window.selectProfileColor = function(colorHex) {
-            // Unselect previous
             document.querySelectorAll('.profile-color-dot').forEach(el => {
                 el.classList.remove('border-white', 'scale-110');
                 el.innerHTML = '';
             });
 
-            // Find matching or fallback custom
             const target = Array.from(document.querySelectorAll('.profile-color-dot')).find(el => el.getAttribute('data-color') === colorHex);
             if (target) {
                 target.classList.add('border-white', 'scale-110');
@@ -2657,7 +2727,6 @@
             renderPresenceList();
             renderRemoteCursors();
             
-            // Broadcast profile change presence event to all connected mesh peers
             if (myPeer && !myPeer.destroyed) {
                 broadcastMessageToPeers({
                     type: 'PRESENCE',
@@ -2672,14 +2741,12 @@
             showToast(i18n[currentLang].toastProfileUpdated, "success");
         };
 
-        /* Autocomplete logic for @ Mentions */
         let mentionStartIndex = -1;
 
         function triggerAutocompleteCheck(textarea) {
             const text = textarea.value;
             const caretPos = textarea.selectionStart;
             
-            // Look backward from caret to find the last '@'
             const textBeforeCaret = text.substring(0, caretPos);
             const atIndex = textBeforeCaret.lastIndexOf('@');
             
@@ -2696,7 +2763,6 @@
             const menu = document.getElementById('mention-autocomplete');
             menu.innerHTML = '';
 
-            // Map candidate peers (including local)
             const peers = [
                 { id: localUser.id, name: localUser.name + " (Você)", color: localUser.color },
                 ...Object.values(remotePeersData).map(p => ({ id: p.id, name: p.name, color: p.color }))
@@ -2712,12 +2778,13 @@
             filtered.forEach(p => {
                 const item = document.createElement('button');
                 item.className = 'w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors';
+                // Pass pure name to markdown logic natively, removing the "(Você)" artifact
+                const rawName = p.name.replace(" (Você)", "");
                 item.innerHTML = `<span class="w-2 h-2 rounded-full" style="background-color: ${p.color}"></span> ${escapeHTML(p.name)}`;
-                item.onclick = () => insertMention(p.id, p.name, textarea);
+                item.onclick = () => insertMention(p.id, rawName, textarea);
                 menu.appendChild(item);
             });
 
-            // Calculate menu position relative to caret coordinates
             try {
                 const coords = getCaretCoordinates(textarea, mentionStartIndex);
                 menu.style.top = (coords.top - textarea.scrollTop + coords.height + 15) + 'px';
@@ -2740,9 +2807,8 @@
             const before = text.substring(0, mentionStartIndex);
             const after = text.substring(caretPos);
             
-            // Inject structural markup token into active document payload
-            const mentionToken = `<mention::${peerId}>`;
-            const newText = before + mentionToken + after;
+            const mentionToken = `@${peerName}`;
+            const newText = before + mentionToken + " " + after;
             
             const oldText = vault[activeNoteKey].content;
             textarea.value = newText;
@@ -2763,17 +2829,14 @@
             hideMentionAutocomplete();
             textarea.focus();
             
-            // Reset cursor focus position cleanly after mention injection
-            const newCursorPos = mentionStartIndex + mentionToken.length;
+            const newCursorPos = mentionStartIndex + mentionToken.length + 1;
             textarea.setSelectionRange(newCursorPos, newCursorPos);
         }
 
-        // Intercept navigation keys when mentions autocomplete is visible
         window.handleEditorKeyDown = function(e) {
             const menu = document.getElementById('mention-autocomplete');
             if (menu && !menu.classList.contains('hidden')) {
                 if (e.key === 'Escape' || e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter') {
-                    // Let keyboard controls handle autocomplete if desired, or simply close on Escape
                     if (e.key === 'Escape') {
                         e.preventDefault();
                         hideMentionAutocomplete();
@@ -2782,7 +2845,6 @@
             }
         };
 
-        /* INTEGRAL OS FILE SYSTEM BACKUP SYSTEM (JSON package export/import) */
         window.exportFullVaultBackup = function() {
             const backupPackage = {
                 version: "2.0",
@@ -2832,10 +2894,8 @@
                             activeNoteKey = keys[0];
                         }
 
-                        // Save loaded package state locally
                         saveVaultLocalOnly();
                         
-                        // Synchronize imported vault metadata cleanly with the Peer Network
                         if (window.triggerP2PVaultStructureUpdate) {
                             window.triggerP2PVaultStructureUpdate();
                         }
@@ -2852,7 +2912,6 @@
                     console.error("Backup import error", err);
                     showToast(currentLang === 'pt-br' ? "Erro ao decodificar arquivo JSON." : "Error decoding JSON backup file.", "error");
                 }
-                // Clear input field value to allow re-triggering file inputs
                 event.target.value = "";
             };
             reader.readAsText(file);

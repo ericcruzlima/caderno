@@ -9,28 +9,33 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         obsidian: {
                             bg: '#18181c',
                             sidebar: '#1e1e24',
+                            active: '#2e2e38',
                             border: '#31313a',
-                            accent: 'var(--accent-color)',
-                            accentHover: 'var(--accent-hover)',
-                            accentMuted: 'var(--accent-muted)',
-                            accentBg: 'var(--accent-bg)',
-                            accentBorder: 'var(--accent-border)',
-                            textMuted: '#94a3b8',
-                            active: '#2d2d34'
+                            accent: 'var(--accent-color, #a855f7)',
+                            accentHover: 'var(--accent-hover, #c084fc)',
+                            accentMuted: 'var(--accent-muted, #d8b4fe)',
+                            accentBg: 'var(--accent-bg, rgba(168, 85, 247, 0.15))',
+                            accentBorder: 'var(--accent-border, rgba(168, 85, 247, 0.3))',
+                            textMuted: '#9ca3af'
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
                     }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
@@ -41,7 +46,7 @@
     <!-- Theme Accelerator (Prevent FOUC) -->
     <script src="js/theme.js"></script>
 </head>
-<body class="bg-obsidian-bg text-gray-200 h-screen flex flex-col overflow-hidden">
+<body class="dark h-full bg-obsidian-bg text-gray-200 h-screen flex flex-col overflow-hidden">
 
     <!-- Top Navigation Header -->
     <header class="bg-obsidian-sidebar border-b border-obsidian-border px-3 py-2 flex items-center justify-between z-10 select-none relative">
@@ -60,7 +65,11 @@
                     <i class="fa-solid fa-folder"></i>
                     <span id="breadcrumb-vault-label" class="hidden sm:inline">vault</span>
                     <i class="fa-solid fa-chevron-right text-[9px] hidden sm:inline"></i>
-                    <span id="breadcrumb-filename" class="text-gray-300 truncate max-w-[120px] sm:max-w-[200px]">Roadmap.md</span>
+                    <div class="flex items-center gap-1 overflow-hidden">
+                        <span id="breadcrumb-filename" class="text-gray-300 truncate max-w-[120px] sm:max-w-[200px]">Roadmap.md</span>
+                        <span class="mx-1 opacity-40">/</span>
+                        <span id="active-tab-title" class="text-obsidian-accent font-bold truncate">Project Roadmap</span>
+                    </div>
                 </div>
             </a>
         </div>
@@ -85,6 +94,9 @@
                         <span id="presence-indicator" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
                     <div id="presence-avatars" class="flex items-center -space-x-1.5 overflow-hidden"></div>
+                    <div id="typing-notification" class="hidden flex items-center ml-2 text-[10px] text-obsidian-accent font-medium animate-pulse">
+                        <i class="fa-solid fa-circle-nodes mr-1"></i> <span id="typing-notification-text">...</span>
+                    </div>
                     <span id="collab-status-text" class="hidden"></span>
                     <i class="fa-solid fa-chevron-down text-[10px] text-neutral-500 group-hover:text-white transition-colors"></i>
                 </div>

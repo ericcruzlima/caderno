@@ -1,15 +1,15 @@
 /* CORE VAULT & APP STATE */
-var vault = {};
-var activeNoteKey = "";
-let viewMode = "hybrid"; 
-let searchFilter = "";
-let isScrolling = false;
-let deleteCandidateKey = null;
+window.vault = {};
+window.activeNoteKey = "";
+window.viewMode = "hybrid"; 
+window.searchFilter = "";
+window.isScrolling = false;
+window.deleteCandidateKey = null;
 
-var blameMap = {};
-let blameModeEnabled = false;
+window.blameMap = {};
+window.blameModeEnabled = false;
 
-var userMentions = [];
+window.userMentions = [];
 
 window.initializeVaultState = function() {
     if (window.vaultInitialized) return;
@@ -18,7 +18,7 @@ window.initializeVaultState = function() {
     const savedVault = localStorage.getItem("caderno_vault");
     if (savedVault) {
         try {
-            vault = JSON.parse(savedVault);
+            window.vault = JSON.parse(savedVault);
         } catch(e) {
             loadDefaultVault(currentLang);
         }
@@ -27,20 +27,20 @@ window.initializeVaultState = function() {
     }
 
     const savedActiveKey = localStorage.getItem("caderno_active_key");
-    if (savedActiveKey && vault[savedActiveKey]) {
-        activeNoteKey = savedActiveKey;
+    if (savedActiveKey && window.vault[savedActiveKey]) {
+        window.activeNoteKey = savedActiveKey;
     } else {
-        activeNoteKey = Object.keys(vault)[0] || "";
+        window.activeNoteKey = Object.keys(window.vault)[0] || "";
     }
 
     const savedBlame = localStorage.getItem("caderno_blame_map");
     if (savedBlame) {
-        try { blameMap = JSON.parse(savedBlame); } catch(e){}
+        try { window.blameMap = JSON.parse(savedBlame); } catch(e){}
     }
 
     const savedMentions = localStorage.getItem("caderno_mentions");
     if (savedMentions) {
-        try { userMentions = JSON.parse(savedMentions); } catch(e){}
+        try { window.userMentions = JSON.parse(savedMentions); } catch(e){}
     }
     if (window.updateMentionsUI) window.updateMentionsUI();
 
@@ -48,11 +48,11 @@ window.initializeVaultState = function() {
 };
 
 window.findNoteKeyByTitle = function(title) {
-    return Object.keys(vault).find(key => vault[key].title.toLowerCase() === title.trim().toLowerCase());
+    return Object.keys(window.vault).find(key => window.vault[key].title.toLowerCase() === title.trim().toLowerCase());
 };
 
 function loadDefaultVault(lang) {
-    vault = {
+    window.vault = {
         "project_roadmap": {
             title: lang === 'pt-br' ? "Roteiro do Projeto & Tarefas" : "Project Roadmap & Tasks",
             content: getRoadmapMarkdown(lang)
@@ -65,27 +65,27 @@ function loadDefaultVault(lang) {
     saveVaultLocalOnly();
 }
 
-function saveVaultLocalOnly() {
-    localStorage.setItem("caderno_vault", JSON.stringify(vault));
-    localStorage.setItem("caderno_active_key", activeNoteKey);
-    localStorage.setItem("caderno_blame_map", JSON.stringify(blameMap));
-    localStorage.setItem("caderno_mentions", JSON.stringify(userMentions));
+window.saveVaultLocalOnly = function() {
+    localStorage.setItem("caderno_vault", JSON.stringify(window.vault));
+    localStorage.setItem("caderno_active_key", window.activeNoteKey);
+    localStorage.setItem("caderno_blame_map", JSON.stringify(window.blameMap));
+    localStorage.setItem("caderno_mentions", JSON.stringify(window.userMentions));
     if (window.updateGlobalProgressTracker) window.updateGlobalProgressTracker();
-}
+};
 
-function saveVaultStructure() {
-    saveVaultLocalOnly();
+window.saveVaultStructure = function() {
+    window.saveVaultLocalOnly();
     if (window.triggerP2PVaultStructureUpdate) {
         window.triggerP2PVaultStructureUpdate();
     }
-}
+};
 
 window.updateBlameTracking = function(noteKey, oldText, newText, author) {
-    if (!blameMap[noteKey]) {
-        blameMap[noteKey] = [];
+    if (!window.blameMap[noteKey]) {
+        window.blameMap[noteKey] = [];
     }
 
-    let currentMap = blameMap[noteKey];
+    let currentMap = window.blameMap[noteKey];
 
     if (currentMap.length === 0 && oldText.length > 0) {
         currentMap.push({
@@ -161,18 +161,18 @@ window.updateBlameTracking = function(noteKey, oldText, newText, author) {
         }
     });
 
-    blameMap[noteKey] = consolidatedMap;
-    saveVaultLocalOnly();
+    window.blameMap[noteKey] = consolidatedMap;
+    window.saveVaultLocalOnly();
 };
 
-function createNewNote() {
+window.createNewNote = function() {
     const id = "note_" + Date.now();
     const noteTitle = currentLang === 'pt-br' ? "Nota Sem Título" : "Untitled Note";
     const noteContent = currentLang === 'pt-br' 
         ? "# Nota Sem Título\n\n- [ ] Novas tarefas aqui\n- [ ] Dê um duplo-clique no título no menu lateral para renomear!" 
         : "# Untitled Note\n\n- [ ] New objectives go here\n- [ ] Double click the title in explorer to rename";
     
-    vault[id] = {
+    window.vault[id] = {
         title: noteTitle,
         content: noteContent
     };
@@ -183,17 +183,17 @@ function createNewNote() {
         color: localUser.color
     });
 
-    activeNoteKey = id;
+    window.activeNoteKey = id;
     
-    saveVaultLocalOnly();
+    window.saveVaultLocalOnly();
     if (window.triggerP2PVaultStructureUpdate) {
         window.triggerP2PVaultStructureUpdate();
     }
 
     if (window.renderVaultList) window.renderVaultList();
     if (window.loadActiveNote) window.loadActiveNote();
-    showToast(i18n[currentLang].toastCreated, "success");
-}
+    if (window.showToast) window.showToast(i18n[currentLang].toastCreated, "success");
+};
 
 function getRoadmapMarkdown(lang) {
     if (lang === 'pt-br') {

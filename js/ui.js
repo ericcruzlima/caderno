@@ -628,12 +628,10 @@ window.reportCursorMove = function() {
         window.cursorMoveTimeout = setTimeout(() => {
             if (!myPeer || myPeer.destroyed) return;
             broadcastMessageToPeers({
-                type: 'PRESENCE',
-                name: localUser.name,
-                color: localUser.color,
-                isTyping: localUser.isTyping,
-                activeNoteKey: window.activeNoteKey,
-                cursorPos: localUser.cursorPos
+                type: 'CURSOR_MOVE',
+                peerId: myPeer.id,
+                pos: pos,
+                noteKey: window.activeNoteKey
             });
         }, 100);
     }
@@ -912,3 +910,78 @@ document.addEventListener('change', function(e) {
         showToast(isChecked ? i18n[currentLang].toastQuestCompleted : i18n[currentLang].toastQuestReset, "success");
     }
 });
+
+window.shareSessionLink = function() {
+    let roomId = new URLSearchParams(window.location.search).get('room') || (myPeer && myPeer.id);
+    if (!roomId) return showToast(currentLang === 'pt-br' ? "Canal P2P não inicializado. Tente novamente em instantes." : "P2P channel not initialized yet. Try again in a moment.", "error");
+
+    const tempInput = document.createElement("input");
+    document.body.appendChild(tempInput);
+    tempInput.value = window.location.origin + window.location.pathname + "?room=" + roomId;
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+
+    showToast(currentLang === 'pt-br' ? "Link de sessão copiado! Envie para seus companheiros." : "Session link copied to clipboard! Share it with your friends.", "success");
+};
+
+window.downloadNote = function(event, key) {
+    if (event) event.stopPropagation();
+    const note = vault[key];
+    if (!note) return;
+
+    try {
+        const blob = new Blob([note.content], { type: 'text/markdown;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const tempLink = document.createElement('a');
+        tempLink.href = url;
+        tempLink.setAttribute('download', `${note.title || 'untitled'}.md`);
+        document.body.appendChild(tempLink);
+        tempLink.click();
+        document.body.removeChild(tempLink);
+        URL.revokeObjectURL(url);
+
+        showToast(i18n[currentLang].toastDownloaded.replace("{title}", note.title), "success");
+    } catch(e) {
+        console.error("Markdown file download failed", e);
+        showToast(currentLang === 'pt-br' ? "Falha ao baixar a nota." : "Failed to download note.", "error");
+    }
+};
+
+window.downloadActiveNote = function() {
+    if (activeNoteKey) {
+        window.downloadNote(null, activeNoteKey);
+    }
+};
+
+window.triggerDeleteNote = function(event, key) {
+    event.stopPropagation();
+    deleteCandidateKey = key;
+    document.getElementById('delete-modal-note-title').innerText = vault[key].title;
+    document.getElementById('delete-modal').classList.remove('hidden');
+    document.getElementById('delete-modal').classList.add('flex');
+};
+
+window.closeDeleteModal = function() {
+    deleteCandidateKey = null;
+    document.getElementById('delete-modal').classList.add('hidden');
+    document.getElementById('delete-modal').classList.remove('flex');
+};
+
+window.executeDeleteNote = function() {
+    if (!deleteCandidateKey) return;
+    const title = vault[deleteCandidateKey].title;
+    delete vault[deleteCandidateKey];
+    if (window.blameMap) delete blameMap[deleteCandidateKey];
+
+    if (activeNoteKey === deleteCandidateKey) {
+        const keys = Object.keys(vault);
+        activeNoteKey = keys.length > 0 ? keys[0] : "";
+    }
+
+    closeDeleteModal();
+    if (window.saveVaultStructure) window.saveVaultStructure();
+    renderVaultList();
+    if (window.loadActiveNote) window.loadActiveNote();
+    showToast(i18n[currentLang].toastDeleted.replace("{title}", title), "info");
+};

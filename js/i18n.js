@@ -110,28 +110,28 @@ const i18n = {
 const svgBr = `<svg class="w-5 h-3.5 rounded shadow-sm border border-neutral-700/50 shrink-0" viewBox="0 0 720 500" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="720" height="500" fill="#009c3b"/><polygon points="360,80 80,250 360,420 640,250" fill="#ffdf00"/><circle cx="360" cy="250" r="120" fill="#002171"/><path d="M 240,250 A 120,120 0 0,0 480,250" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/></svg>`;
 const svgEn = `<svg class="w-5 h-3.5 rounded shadow-sm border border-neutral-700/50 shrink-0" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#B91C1C"/><path d="M0 1H20M0 3H20M0 5H20M0 7H20M0 9H20M0 11H20M0 13H20" stroke="#FFFFFF" stroke-width="1"/><rect width="9" height="7" fill="#1E3A8A"/><circle cx="2" cy="2" r="0.4" fill="white"/><circle cx="4" cy="2" r="0.4" fill="white"/><circle cx="6" cy="2" r="0.4" fill="white"/><circle cx="3" cy="3.5" r="0.4" fill="white"/><circle cx="5" cy="3.5" r="0.4" fill="white"/><circle cx="2" cy="5" r="0.4" fill="white"/><circle cx="4" cy="5" r="0.4" fill="white"/><circle cx="6" cy="5" r="0.4" fill="white"/></svg>`;
 
-let currentLang = 'en';
+window.currentLang = 'en';
 
-function initLanguageSystem() {
+window.initLanguageSystem = function() {
     const savedLanguage = localStorage.getItem("caderno_language");
     if (savedLanguage === 'en' || savedLanguage === 'pt-br') {
-        currentLang = savedLanguage;
+        window.currentLang = savedLanguage;
     } else {
         const browserLocale = (navigator.language || navigator.userLanguage || "").toLowerCase();
-        currentLang = browserLocale.startsWith("pt") ? 'pt-br' : 'en';
+        window.currentLang = browserLocale.startsWith("pt") ? 'pt-br' : 'en';
     }
-    applyUILanguage(currentLang);
-}
+    applyUILanguage(window.currentLang);
+};
 
-function toggleLanguage() {
-    const nextLang = currentLang === 'en' ? 'pt-br' : 'en';
-    currentLang = nextLang;
+window.toggleLanguage = function() {
+    const nextLang = window.currentLang === 'en' ? 'pt-br' : 'en';
+    window.currentLang = nextLang;
     localStorage.setItem("caderno_language", nextLang);
     applyUILanguage(nextLang);
-    showToast(nextLang === 'pt-br' ? "Idioma alterado para Português!" : "Language changed to English!", "info");
-}
+    if (window.showToast) window.showToast(nextLang === 'pt-br' ? "Idioma alterado para Português!" : "Language changed to English!", "info");
+};
 
-function applyUILanguage(lang) {
+window.applyUILanguage = function(lang) {
     const t = i18n[lang];
     
     document.getElementById('vault-logo-text').innerText = t.vaultTitle;
@@ -186,7 +186,7 @@ function applyUILanguage(lang) {
 
     const collabStatusText = document.getElementById('collab-status-text');
     if (collabStatusText) {
-        if (connections.length > 0) {
+        if (window.connections && connections.length > 0) {
             collabStatusText.innerText = `${connections.length} ${t.collabActive}`;
         } else {
             const isConnecting = myPeer && !myPeer.destroyed;
@@ -196,7 +196,7 @@ function applyUILanguage(lang) {
 
     const badge = document.getElementById("connection-mode-badge");
     if (badge) {
-        if (badge.innerText.includes("ACTIVE") || badge.innerText.includes("ATIVA")) {
+        if (badge.innerText.includes("ACTIVE") || badge.innerText.includes("ATIVA") || badge.innerText.includes("HOST")) {
             badge.innerText = t.p2pMode;
         } else {
             badge.innerText = t.localMode;
@@ -211,4 +211,4 @@ function applyUILanguage(lang) {
 
     if (window.renderVaultList) window.renderVaultList();
     if (window.renderActiveNote) window.renderActiveNote();
-}
+};

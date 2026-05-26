@@ -148,15 +148,26 @@ function handlePaletteSearch() {
 }
 window.handlePaletteSearch = handlePaletteSearch;
 
+function getPreferredViewMode() {
+    const savedMode = localStorage.getItem('caderno_view_mode');
+    if (savedMode === 'edit' || savedMode === 'reading' || savedMode === 'split') return savedMode;
+    return 'split';
+}
+window.getPreferredViewMode = getPreferredViewMode;
+
 function setViewMode(mode) {
+    if (mode === 'hybrid') mode = 'split';
     viewMode = mode;
+    if (['edit', 'reading', 'split'].includes(mode)) {
+        localStorage.setItem('caderno_view_mode', mode);
+    }
     const editor = document.getElementById('editor-container');
     const preview = document.getElementById('preview-container');
     const splitter = document.getElementById('pane-splitter');
     const hybridBackdrop = document.getElementById('hybrid-backdrop');
     const textarea = document.getElementById('markdown-textarea');
     
-    ['btn-edit-mode', 'btn-hybrid-mode', 'btn-reading-mode', 'btn-split-mode'].forEach(id => {
+    ['btn-edit-mode', 'btn-reading-mode', 'btn-split-mode'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.className = "px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-textMuted hover:text-white";
     });

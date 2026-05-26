@@ -153,7 +153,8 @@ window.applyUILanguage = function(lang) {
     document.getElementById('delete-modal-confirm-btn').innerText = t.delete;
 
     document.getElementById('btn-edit-mode').innerHTML = `<i class="fa-solid fa-code mr-1"></i> ` + t.modeEdit;
-    document.getElementById('btn-hybrid-mode').innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ` + t.modeHybrid;
+    const hybridBtn = document.getElementById('btn-hybrid-mode');
+    if (hybridBtn) hybridBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles mr-1"></i> ` + t.modeHybrid;
     document.getElementById('btn-reading-mode').innerHTML = `<i class="fa-solid fa-book-open mr-1"></i> ` + t.modeReading;
     document.getElementById('btn-split-mode').innerHTML = `<i class="fa-solid fa-columns mr-1"></i> ` + t.modeSplit;
 

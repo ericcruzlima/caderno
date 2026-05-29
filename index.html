@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en-US" class="dark h-full">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Caderno - Real-time Collaborative Notebook</title>
-    <!-- Tailwind CSS -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Caderno | P2P Notebook</title>
+    
+    <!-- External Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -33,176 +34,22 @@
             }
         }
     </script>
-    <!-- Google Fonts, FontAwesome & Libraries -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
-    <!-- P2P Networking & Differential Sync Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.4.7/dist/peerjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
     
-    <style>
-        :root {
-            --accent-color: #a855f7;
-            --accent-hover: #c084fc;
-            --accent-muted: #d8b4fe;
-            --accent-bg: rgba(168, 85, 247, 0.15);
-            --accent-border: rgba(168, 85, 247, 0.3);
-            --accent-gradient-start: #a855f7;
-            --accent-gradient-end: #6366f1;
-        }
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #18181c;
-            color: #e2e8f0;
-        }
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #18181c;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #2d2d34;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f4a;
-        }
-        .markdown-preview h1 {
-            font-size: 1.85rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-top: 1.75rem;
-            margin-bottom: 0.75rem;
-            border-bottom: 1px solid #31313a;
-            padding-bottom: 0.25rem;
-        }
-        .markdown-preview h2 {
-            font-size: 1.45rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-        }
-        .markdown-preview h3 {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #cbd5e1;
-            margin-top: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .markdown-preview h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--accent-color);
-            margin-top: 1rem;
-            margin-bottom: 0.25rem;
-        }
-        .markdown-preview p {
-            margin-bottom: 0.75rem;
-            line-height: 1.625;
-            color: #94a3b8;
-        }
-        .task-item {
-            transition: background-color 0.2s;
-        }
-        .obsidian-checkbox {
-            appearance: none;
-            width: 1.1rem;
-            height: 1.1rem;
-            border: 2px solid #52525b;
-            border-radius: 4px;
-            background-color: transparent;
-            display: inline-grid;
-            place-content: center;
-            cursor: pointer;
-            transition: all 0.15s;
-        }
-        .obsidian-checkbox::before {
-            content: "";
-            width: 0.55rem;
-            height: 0.55rem;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em #ffffff;
-            transform-origin: center;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-        .obsidian-checkbox:checked {
-            background-color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-        .obsidian-checkbox:checked::before {
-            transform: scale(1);
-        }
-        .line-numbers div {
-            transition: color 0.15s;
-        }
-        
-        /* Collaborative Cursor Styles */
-        .remote-cursor {
-            position: absolute;
-            width: 2px;
-            background-color: transparent;
-            pointer-events: none;
-            z-index: 50;
-            transition: top 0.1s linear, left 0.1s linear;
-        }
-        .remote-cursor-flag {
-            position: absolute;
-            top: -16px;
-            left: 0;
-            padding: 2px 5px;
-            border-radius: 4px;
-            border-bottom-left-radius: 0;
-            color: white;
-            font-size: 10px;
-            font-family: 'Inter', sans-serif;
-            line-height: 1;
-            font-weight: 600;
-            white-space: nowrap;
-            pointer-events: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        #caret-mirror {
-            position: absolute;
-            top: 0;
-            left: -9999px;
-            visibility: hidden;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-    </style>
-    <!-- Dynamic Theme Accelerator -->
-    <script>
-        (function() {
-            const savedTheme = localStorage.getItem('caderno_theme_accent') || 'purple';
-            const palettes = {
-                purple: { color: '#a855f7', hover: '#c084fc', muted: '#d8b4fe', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', gradientStart: '#a855f7', gradientEnd: '#6366f1' },
-                emerald: { color: '#10b981', hover: '#34d399', muted: '#a7f3d0', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', gradientStart: '#10b981', gradientEnd: '#3b82f6' },
-                indigo: { color: '#6366f1', hover: '#818cf8', muted: '#c7d2fe', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.3)', gradientStart: '#6366f1', gradientEnd: '#ec4899' },
-                amber: { color: '#f59e0b', hover: '#fbbf24', muted: '#fde68a', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', gradientStart: '#f59e0b', gradientEnd: '#ef4444' },
-                rose: { color: '#f43f5e', hover: '#fb7185', muted: '#fecdd3', bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.3)', gradientStart: '#f43f5e', gradientEnd: '#a855f7' }
-            };
-            const palette = palettes[savedTheme] || palettes.purple;
-            const root = document.documentElement;
-            root.style.setProperty('--accent-color', palette.color);
-            root.style.setProperty('--accent-hover', palette.hover);
-            root.style.setProperty('--accent-muted', palette.muted);
-            root.style.setProperty('--accent-bg', palette.bg);
-            root.style.setProperty('--accent-border', palette.border);
-            root.style.setProperty('--accent-gradient-start', palette.gradientStart);
-            root.style.setProperty('--accent-gradient-end', palette.gradientEnd);
-        })();
-    </script>
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Theme Accelerator (Prevent FOUC) -->
+    <script src="js/theme.js"></script>
 </head>
-<body class="h-full flex flex-col overflow-hidden">
+<body class="dark h-full bg-obsidian-bg text-gray-200 h-screen flex flex-col overflow-hidden">
 
     <!-- Top Navigation Header -->
-    <header class="bg-obsidian-sidebar border-b border-obsidian-border px-3 py-2 flex items-center justify-between z-10 select-none">
+    <header class="bg-obsidian-sidebar border-b border-obsidian-border px-3 py-2 flex items-center justify-between z-10 select-none relative">
         <div class="flex items-center gap-3">
             <button id="btn-toggle-left" onclick="toggleSidebar('left-sidebar')" class="p-1.5 hover:bg-obsidian-active rounded transition-all border border-transparent" title="Toggle File Explorer (Ctrl+Shift+F)">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-[17px] h-[17px]">
@@ -214,67 +61,120 @@
                 <i class="fa-solid fa-book-bookmark text-obsidian-accent text-xl animate-pulse"></i>
                 <span id="vault-logo-text" class="font-bold tracking-tight text-white text-xs sm:text-sm hidden md:inline">CADERNO</span>
                 <div class="h-4 w-[1px] bg-obsidian-border"></div>
-                <div class="flex items-center gap-1.5 text-xs text-obsidian-textMuted font-mono">
-                    <i class="fa-solid fa-folder"></i>
-                    <span id="breadcrumb-vault-label" class="hidden sm:inline">vault</span>
-                    <i class="fa-solid fa-chevron-right text-[9px] hidden sm:inline"></i>
-                    <span id="breadcrumb-filename" class="text-gray-300 truncate max-w-[120px] sm:max-w-[200px]">Roadmap.md</span>
-                </div>
             </a>
         </div>
-        
-        <div class="flex items-center gap-1.5 sm:gap-2 lg:gap-3 shrink-0">
-            <button onclick="toggleLanguage()" class="px-2 py-1.5 hover:bg-obsidian-active rounded transition-all border border-obsidian-border/50 flex items-center gap-1.5 shrink-0" title="Change Language / Alterar Idioma">
-                <span id="active-flag-container" class="flex items-center"></span>
-                <span id="active-lang-code" class="text-[10px] font-bold text-gray-300 uppercase tracking-wider font-mono hidden md:inline">EN</span>
-            </button>
 
-            <!-- Theme Accent Selector Dropdown -->
-            <div class="relative shrink-0 select-none">
-                <button id="btn-theme-picker" onclick="toggleThemeDropdown(event)" class="px-2 py-1.5 hover:bg-obsidian-active rounded transition-all border border-obsidian-border/50 flex items-center gap-1.5" title="Change Theme / Mudar Tema">
-                    <i class="fa-solid fa-palette text-obsidian-accent"></i>
-                    <span class="text-[10px] font-bold text-gray-300 uppercase tracking-wider font-mono hidden md:inline">Theme</span>
-                </button>
-                <div id="theme-dropdown" class="absolute right-0 mt-1.5 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-xl py-2 w-32 hidden z-50">
-                    <button onclick="changeTheme('purple')" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
-                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> Purple
-                    </button>
-                    <button onclick="changeTheme('emerald')" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
-                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Emerald
-                    </button>
-                    <button onclick="changeTheme('indigo')" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
-                        <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Indigo
-                    </button>
-                    <button onclick="changeTheme('amber')" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
-                        <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Amber
-                    </button>
-                    <button onclick="changeTheme('rose')" class="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
-                        <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Rose
-                    </button>
+        <!-- Middle Quick Search -->
+        <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:block w-full max-w-sm">
+            <button onclick="openCommandPalette()" class="w-full px-3 py-1.5 bg-obsidian-bg border border-obsidian-border text-xs text-obsidian-textMuted rounded-lg hover:bg-obsidian-active hover:text-white transition-all flex items-center justify-between gap-2" title="Quick Search">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span id="quick-search-text">Quick Search</span>
                 </div>
-            </div>
-
-            <div id="collab-status-container" class="hidden sm:flex items-center gap-2 px-2 lg:px-3 py-1 bg-obsidian-bg/50 border border-obsidian-border rounded-lg text-xs shrink-0" title="Collaboration Status">
-                <div class="flex items-center gap-1.5">
+                <kbd class="bg-obsidian-sidebar px-1.5 py-0.5 rounded text-[9px] border border-neutral-700 font-mono">Ctrl P</kbd>
+            </button>
+        </div>
+        
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <!-- Collaboration Info status & User Menu -->
+            <div id="collab-status-container" class="flex items-center gap-2 px-2 py-1 bg-obsidian-bg/50 border border-obsidian-border rounded-lg text-xs shrink-0 relative group cursor-pointer" title="Collaboration & Profile">
+                <div class="flex items-center gap-2" onclick="toggleUserMenu(event)">
                     <span class="relative flex h-2 w-2">
                         <span id="presence-pulse" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span id="presence-indicator" class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span id="collab-status-text" class="text-neutral-400 font-medium hidden lg:inline">Connecting live...</span>
+                    <div id="presence-avatars" class="flex items-center -space-x-1.5 overflow-hidden"></div>
+                    <div id="typing-notification" class="hidden flex items-center ml-2 text-[10px] text-obsidian-accent font-medium animate-pulse">
+                        <i class="fa-solid fa-circle-nodes mr-1"></i> <span id="typing-notification-text">...</span>
+                    </div>
+                    <span id="collab-status-text" class="hidden"></span>
+                    <i class="fa-solid fa-chevron-down text-[10px] text-neutral-500 group-hover:text-white transition-colors"></i>
                 </div>
-                <div class="h-3 w-[1px] bg-obsidian-border hidden lg:block"></div>
-                <div id="presence-avatars" class="flex items-center -space-x-1.5 overflow-hidden"></div>
+
+                <!-- User Submenu -->
+                <div id="user-dropdown" class="absolute right-0 top-full mt-1.5 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-xl py-2 w-48 hidden z-50">
+                    <div class="px-3 py-1.5 border-b border-obsidian-border">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Collaborator</span>
+                    </div>
+                    <button onclick="openProfileModal()" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors">
+                        <i class="fa-solid fa-user-gear text-obsidian-accent"></i> My Profile
+                    </button>
+                    <button onclick="shareSessionLink()" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center gap-2 transition-colors lg:hidden">
+                        <i class="fa-solid fa-share-nodes text-obsidian-accent"></i> Share Session
+                    </button>
+                    <div class="px-3 py-1.5 border-t border-b border-obsidian-border mt-1">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-neutral-500">Mentions</span>
+                    </div>
+                    <div id="mentions-list-mini" class="max-h-32 overflow-y-auto px-1 py-1">
+                        <!-- Mentions populated via JS -->
+                    </div>
+                    <button onclick="clearMentions()" class="w-full text-center py-1.5 text-[10px] text-red-400 hover:underline">Clear Mentions</button>
+                </div>
             </div>
 
-            <button onclick="shareSessionLink()" class="px-2 py-1.5 lg:px-3 bg-obsidian-accentBg border border-obsidian-accentBorder text-xs text-obsidian-accentMuted rounded hover:bg-obsidian-accent hover:text-white transition-all flex items-center gap-1.5 font-semibold shrink-0" title="Share Session Link">
+            <!-- Share Button (Top Level) -->
+            <button onclick="shareSessionLink()" class="hidden lg:flex px-3 py-1.5 bg-obsidian-accentBg border border-obsidian-accentBorder text-xs text-obsidian-accentMuted rounded hover:bg-obsidian-accent hover:text-white transition-all items-center gap-1.5 font-semibold shrink-0" title="Share Session Link">
                 <i class="fa-solid fa-share-nodes"></i>
-                <span id="share-btn-text" class="hidden lg:inline">Share Live Session</span>
+                <span id="share-btn-text">Share Live Session</span>
             </button>
 
-            <button onclick="openCommandPalette()" class="px-2 py-1.5 lg:px-3 bg-obsidian-bg border border-obsidian-border text-xs text-obsidian-textMuted rounded hover:bg-obsidian-active hover:text-white transition-all flex items-center gap-2 shrink-0" title="Quick Search">
+            <!-- Settings COG Menu -->
+            <div class="relative shrink-0 select-none">
+                <button id="btn-settings-cog" onclick="toggleSettingsDropdown(event)" class="p-1.5 hover:bg-obsidian-active rounded transition-all border border-obsidian-border/50 text-neutral-400 hover:text-white flex items-center justify-center" title="Settings / Preferências">
+                    <i class="fa-solid fa-cog text-lg"></i>
+                </button>
+                
+                <div id="settings-dropdown" class="absolute right-0 mt-1.5 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl py-2 w-56 hidden z-50">
+                    <div class="px-3 py-1.5 border-b border-obsidian-border flex items-center justify-between">
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-white">Preferências</span>
+                    </div>
+                    
+                    <!-- Language Switcher -->
+                    <button onclick="toggleLanguage()" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center justify-between transition-colors">
+                        <div class="flex items-center gap-2">
+                            <span id="active-flag-container" class="flex items-center"></span>
+                            <span>Language / Idioma</span>
+                        </div>
+                        <span id="active-lang-code" class="text-[10px] font-bold text-obsidian-accent uppercase tracking-wider font-mono">EN</span>
+                    </button>
+
+                    <!-- Theme Accent Selector -->
+                    <div class="px-3 py-2 border-t border-obsidian-border">
+                        <div class="text-[10px] font-bold text-neutral-500 uppercase mb-2">Theme Accent</div>
+                        <div class="flex gap-2">
+                            <button onclick="changeTheme('purple')" class="w-4 h-4 rounded-full bg-purple-500 border border-white/20"></button>
+                            <button onclick="changeTheme('emerald')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/20"></button>
+                            <button onclick="changeTheme('indigo')" class="w-4 h-4 rounded-full bg-indigo-500 border border-white/20"></button>
+                            <button onclick="changeTheme('amber')" class="w-4 h-4 rounded-full bg-amber-500 border border-white/20"></button>
+                            <button onclick="changeTheme('rose')" class="w-4 h-4 rounded-full bg-rose-500 border border-white/20"></button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-obsidian-border mt-1 pt-1">
+                        <!-- Toggle Personal Cursor Label Option -->
+                        <button onclick="toggleOwnCursorFlag()" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center justify-between transition-colors">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-user-tag w-4"></i>
+                                <span>Show My Name</span>
+                            </div>
+                            <i id="btn-own-cursor-icon" class="fa-solid fa-toggle-off text-neutral-500"></i>
+                        </button>
+
+                        <!-- Git Blame Mode Toggle -->
+                        <button onclick="toggleBlameMode()" id="btn-blame-toggle-cog" class="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-obsidian-active hover:text-white flex items-center justify-between transition-colors">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-code-branch w-4"></i>
+                                <span>Blame Mode</span>
+                            </div>
+                            <span id="blame-status-label" class="text-[9px] px-1 bg-neutral-800 rounded text-neutral-500">OFF</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Search Toggle -->
+            <button onclick="openCommandPalette()" class="lg:hidden p-1.5 hover:bg-obsidian-active rounded transition-all border border-obsidian-border/50 text-neutral-400" title="Search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <span id="quick-search-text" class="hidden md:inline">Quick Search</span>
-                <kbd class="hidden xl:inline bg-obsidian-sidebar px-1 py-0.5 rounded text-[9px] border border-neutral-700 font-mono">Ctrl P</kbd>
             </button>
 
             <button id="btn-toggle-right" onclick="toggleSidebar('right-sidebar')" class="p-1.5 hover:bg-obsidian-active rounded transition-all border border-transparent shrink-0" title="Toggle Document Outline (Ctrl+Shift+O)">
@@ -286,52 +186,50 @@
         </div>
     </header>
 
-    <!-- Main Workspace -->
-    <div class="flex-1 flex overflow-hidden relative">
-        <aside id="left-sidebar" class="w-0 overflow-hidden border-r-0 bg-obsidian-sidebar flex flex-col transition-all duration-300 z-10 shrink-0">
-            <div class="p-3 border-b border-obsidian-border">
+    <div class="flex-1 flex overflow-hidden">
+        <!-- Left Sidebar: File Explorer -->
+        <aside id="left-sidebar" class="w-64 bg-obsidian-sidebar border-r border-obsidian-border flex flex-col transition-all duration-300 shrink-0 relative z-20">
+            <div class="p-3 border-b border-obsidian-border flex flex-col gap-3">
+                <div class="flex items-center justify-between">
+                    <span id="campaign-notes-title" class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">My Notes</span>
+                    <div class="flex items-center gap-1">
+                        <button onclick="exportFullVaultBackup()" class="p-1 text-gray-500 hover:text-white transition-colors" title="Backup Vault">
+                            <i class="fa-solid fa-file-export text-[10px]"></i>
+                        </button>
+                        <label class="p-1 text-gray-500 hover:text-white transition-colors cursor-pointer" title="Import Backup">
+                            <i class="fa-solid fa-file-import text-[10px]"></i>
+                            <input type="file" class="hidden" accept=".json" onchange="importFullVaultBackup(event)">
+                        </label>
+                        <button onclick="createNewNote()" class="p-1 bg-neutral-800 hover:bg-obsidian-accent hover:text-white rounded transition-all group" title="New Note">
+                            <i class="fa-solid fa-plus text-[10px]"></i>
+                        </button>
+                    </div>
+                </div>
                 <div class="relative">
-                    <input id="note-search" type="text" oninput="filterNotes()" placeholder="Search notes..." class="w-full pl-8 pr-3 py-1.5 bg-obsidian-bg border border-obsidian-border rounded text-xs text-gray-200 outline-none focus:border-obsidian-accent placeholder-neutral-500">
-                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-xs text-neutral-500"></i>
+                    <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-600 text-[10px]"></i>
+                    <input id="note-search" type="text" oninput="filterNotes()" class="w-full bg-neutral-900/50 border border-neutral-800 rounded-md py-1.5 pl-8 pr-3 text-xs text-gray-200 placeholder:text-neutral-600 focus:border-obsidian-accent/50 outline-none transition-all" placeholder="Search notes...">
                 </div>
             </div>
-
-            <div class="p-3 flex items-center justify-between text-xs text-obsidian-textMuted uppercase font-semibold tracking-wider select-none">
-                <div class="flex items-center gap-1.5">
-                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
-                    <span id="campaign-notes-title">My Notes</span>
-                </div>
-                <button onclick="createNewNote()" class="p-1 hover:bg-obsidian-active text-gray-300 rounded hover:text-obsidian-accent" title="New Note">
-                    <i class="fa-solid fa-plus-circle"></i>
-                </button>
+            
+            <div id="note-list" class="flex-1 overflow-y-auto p-2 flex flex-col gap-0.5 custom-scrollbar">
+                <!-- Notes populated via JS -->
             </div>
 
-            <div id="note-list" class="flex-1 overflow-y-auto px-2 space-y-0.5"></div>
-
-            <div class="p-3 bg-obsidian-bg border-t border-obsidian-border">
-                <div class="flex justify-between items-center text-xs mb-1">
-                    <span id="overall-completion-title" class="text-obsidian-textMuted">Task Completion</span>
-                    <span id="global-stats-pct" class="font-bold text-obsidian-accent">0%</span>
+            <div class="p-3 bg-obsidian-bg/30 border-t border-obsidian-border mt-auto">
+                <div class="flex items-center justify-between mb-2">
+                    <span id="overall-completion-title" class="text-[10px] font-bold text-neutral-500 uppercase">Task Completion</span>
+                    <span id="global-stats-pct" class="text-[10px] font-mono text-obsidian-accent">0%</span>
                 </div>
-                <div class="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                    <div id="global-stats-bar" class="bg-obsidian-accent h-full w-0 transition-all duration-300"></div>
+                <div class="w-full bg-neutral-800 rounded-full h-1 overflow-hidden">
+                    <div id="global-stats-bar" class="bg-obsidian-accent h-full w-0 transition-all duration-500"></div>
                 </div>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col bg-obsidian-bg overflow-hidden">
-            <div class="bg-obsidian-sidebar/40 border-b border-obsidian-border px-4 py-2 flex items-center justify-between select-none">
-                <div class="flex items-center gap-1.5 overflow-x-auto">
-                    <div class="bg-obsidian-bg px-3 py-1.5 rounded-t-lg border border-b-0 border-obsidian-border text-xs font-semibold text-white flex items-center gap-2 max-w-[180px] truncate">
-                        <i class="fa-regular fa-file-lines text-obsidian-accent"></i>
-                        <span id="active-tab-title">Project Roadmap</span>
-                    </div>
-                </div>
-
-                <div id="typing-notification" class="text-xs text-obsidian-accent font-medium animate-pulse hidden">
-                    <i class="fa-solid fa-circle-nodes mr-1"></i> <span id="typing-notification-text">Someone is typing...</span>
-                </div>
-
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-obsidian-bg relative">
+            <!-- View Mode Switcher -->
+            <div class="top-12 right-6 z-50 flex items-center gap-2">
                 <div class="flex items-center bg-obsidian-bg rounded p-0.5 border border-obsidian-border shrink-0">
                     <button id="btn-edit-mode" onclick="setViewMode('edit')" class="px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-textMuted hover:text-white" title="Markdown Source Mode">
                         <i class="fa-solid fa-code mr-1"></i> Edit
@@ -339,7 +237,7 @@
                     <button id="btn-reading-mode" onclick="setViewMode('reading')" class="px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-textMuted hover:text-white" title="Fully Rendered Checklist View">
                         <i class="fa-solid fa-book-open mr-1"></i> Reading
                     </button>
-                    <button id="btn-split-mode" onclick="setViewMode('split')" class="px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-accent bg-obsidian-active" title="Split Live Preview">
+                    <button id="btn-split-mode" onclick="setViewMode('split')" class="px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-textMuted hover:text-white" title="Split Live Preview">
                         <i class="fa-solid fa-columns mr-1"></i> Split
                     </button>
                 </div>
@@ -364,7 +262,7 @@
 
             <div class="flex-1 flex overflow-hidden relative">
                 <div id="editor-container" class="flex-1 flex flex-col overflow-hidden relative">
-                    <div class="p-4 bg-obsidian-bg border-b border-obsidian-border flex items-center justify-between gap-3 shrink-0">
+                    <div class="p-4 bg-obsidian-bg border-b border-obsidian-border flex items-center justify-between gap-3 shrink-0 relative z-40">
                         <div class="flex items-center gap-3 flex-1 overflow-hidden">
                             <span id="title-header-label" class="text-xs font-bold text-neutral-500 uppercase shrink-0">TITLE</span>
                             <input id="note-title-input" type="text" oninput="handleTitleInput()" class="bg-transparent font-extrabold text-lg text-white outline-none w-full border-b border-transparent hover:border-neutral-800 focus:border-obsidian-accent transition-colors py-0.5 truncate" placeholder="Untitled Note">
@@ -374,25 +272,37 @@
                             <span id="download-btn-text" class="hidden sm:inline">Download .md</span>
                         </button>
                     </div>
+                    
                     <div class="flex-1 flex overflow-hidden">
                         <div id="line-numbers" class="w-10 text-right pr-2 text-neutral-600 font-mono text-xs select-none py-4 border-r border-obsidian-border bg-obsidian-sidebar/20 shrink-0"></div>
                         <div class="flex-1 relative overflow-hidden flex flex-col">
-                            <textarea id="markdown-textarea" onscroll="handleEditorScroll()" oninput="handleSourceInput()" onkeyup="reportCursorMove()" onclick="reportCursorMove()" class="flex-1 bg-transparent text-gray-200 p-4 outline-none resize-none font-mono text-sm leading-6 overflow-y-auto block w-full" placeholder="Start writing markdown content..."></textarea>
-                            <div id="editor-cursors-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-10"></div>
+                            <!-- Mention Dropdown Suggestions -->
+                            <div id="mention-autocomplete" class="absolute left-4 top-10 bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-1 w-48 hidden z-[60] divide-y divide-neutral-800"></div>
+                            
+                            <!-- Masking Overlay Engine for Editor (Spoilers & Mentions) -->
+                            <div id="editor-overlays" class="absolute inset-0 p-4 font-mono text-sm leading-6 whitespace-pre-wrap break-words pointer-events-none z-10 overflow-hidden text-transparent" aria-hidden="true"></div>
+                            
+                            <!-- High-Fidelity Backdrop for Hybrid Mode -->
+                            <div id="hybrid-backdrop" class="markdown-preview hybrid-backdrop font-sans text-sm leading-relaxed overflow-hidden" aria-hidden="true"></div>
+
+                            <textarea id="markdown-textarea" onscroll="handleEditorScroll()" onkeydown="handleEditorKeyDown(event)" oninput="handleSourceInput()" onkeyup="reportCursorMove()" onclick="reportCursorMove()" class="absolute inset-0 bg-transparent p-4 outline-none resize-none font-mono text-sm leading-6 overflow-y-auto block w-full z-20" placeholder="Start writing markdown content..."></textarea>
+                            
+                            <!-- Network Cursors Layer -->
+                            <div id="editor-cursors-layer" class="absolute inset-0 pointer-events-none overflow-hidden z-30"></div>
                         </div>
                     </div>
                 </div>
 
-                <div id="pane-splitter" class="w-[1px] bg-obsidian-border h-full relative z-10"></div>
+                <div id="pane-splitter" class="w-[1px] bg-obsidian-border h-full relative z-40 hidden"></div>
 
-                <div id="preview-container" onscroll="syncScroll('preview')" class="flex-1 overflow-y-auto px-8 py-6 bg-obsidian-bg">
+                <div id="preview-container" onscroll="syncScroll('preview')" class="flex-1 overflow-y-auto px-8 py-6 bg-obsidian-bg relative z-40 hidden">
                     <div class="max-w-3xl mx-auto">
                         <div id="rendered-preview" class="markdown-preview pb-16"></div>
                     </div>
                 </div>
             </div>
 
-            <footer class="bg-obsidian-sidebar border-t border-obsidian-border px-4 py-1.5 flex justify-between items-center text-xs text-obsidian-textMuted font-mono select-none">
+            <footer class="bg-obsidian-sidebar border-t border-obsidian-border px-4 py-1.5 flex justify-between items-center text-xs text-obsidian-textMuted font-mono select-none relative z-40">
                 <div>
                     <span id="word-count">0 words</span>
                 </div>
@@ -402,1658 +312,165 @@
             </footer>
         </main>
 
-        <aside id="right-sidebar" class="w-0 overflow-hidden border-l-0 bg-obsidian-sidebar flex flex-col transition-all duration-300 z-10 shrink-0">
-            <div class="p-3 border-b border-obsidian-border text-xs text-obsidian-textMuted uppercase font-semibold tracking-wider flex items-center gap-2 select-none">
-                <i class="fa-solid fa-list-ul text-obsidian-accent"></i>
-                <span id="outline-panel-title">Document Outline</span>
+        <!-- Right Sidebar: Outline -->
+        <aside id="right-sidebar" class="w-64 bg-obsidian-sidebar border-l border-obsidian-border flex flex-col transition-all duration-300 shrink-0 relative z-20">
+            <div class="p-3 border-b border-obsidian-border flex items-center justify-between">
+                <span id="outline-panel-title" class="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Document Outline</span>
             </div>
-            <div id="outline-container" class="flex-1 overflow-y-auto p-3 text-xs space-y-2"></div>
+            <div id="outline-container" class="flex-1 overflow-y-auto p-3 flex flex-col gap-1 text-xs custom-scrollbar">
+                <!-- Outline populated via JS -->
+            </div>
         </aside>
-
     </div>
 
-    <!-- COMMAND PALETTE MODAL -->
-    <div id="command-palette" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-start justify-center pt-24 z-50 transition-all duration-300">
-        <div class="bg-obsidian-sidebar border border-obsidian-border rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col mx-4">
-            <div class="p-3 border-b border-obsidian-border flex items-center gap-2">
+    <!-- Mouse Cursors Layer (Global) -->
+    <div id="mouse-cursors-layer" class="fixed inset-0 pointer-events-none z-[100] overflow-hidden"></div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none items-end max-w-sm"></div>
+
+    <!-- Modals -->
+    <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[300] hidden items-center justify-center p-4">
+        <div class="bg-obsidian-sidebar border border-obsidian-border rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="p-6 border-b border-obsidian-border">
+                <h3 id="delete-modal-header" class="text-lg font-bold text-white mb-2">Delete Note?</h3>
+                <p class="text-sm text-neutral-400 leading-relaxed">
+                    <span id="delete-modal-desc-before">Are you sure you want to permanently delete</span> 
+                    <span id="delete-modal-note-title" class="text-white font-bold italic"></span>? 
+                    <span id="delete-modal-desc-after">This action cannot be undone.</span>
+                </p>
+            </div>
+            <div class="p-4 bg-black/20 flex gap-3 justify-end">
+                <button id="delete-modal-cancel-btn" onclick="closeDeleteModal()" class="px-4 py-2 text-xs font-bold text-neutral-400 hover:text-white transition-colors">Cancel</button>
+                <button id="delete-modal-confirm-btn" onclick="executeDeleteNote()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-red-900/20">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="command-palette" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[250] hidden items-start justify-center pt-24 px-4">
+        <div class="bg-obsidian-sidebar border border-obsidian-border rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-4 border-b border-obsidian-border flex items-center gap-3">
                 <i class="fa-solid fa-magnifying-glass text-obsidian-accent"></i>
-                <input id="palette-search" type="text" oninput="handlePaletteSearch()" placeholder="Type to search notes and headings..." class="bg-transparent border-none outline-none text-white text-sm flex-1 placeholder-neutral-500">
-                <kbd class="text-[10px] text-neutral-500 bg-obsidian-bg px-1.5 py-0.5 rounded border border-neutral-800 font-mono">ESC</kbd>
+                <input id="palette-search" type="text" oninput="handlePaletteSearch()" class="bg-transparent border-none outline-none text-white w-full text-base placeholder:text-neutral-600" placeholder="Type to search notes and headings...">
             </div>
-            <div id="palette-results" class="max-h-80 overflow-y-auto p-2 divide-y divide-neutral-800/40"></div>
-        </div>
-    </div>
-
-    <!-- TOAST NOTIFICATION STACK -->
-    <div id="toast-container" class="fixed bottom-6 right-6 flex flex-col gap-2 z-50"></div>
-
-    <!-- CONFIRM DELETE MODAL -->
-    <div id="delete-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
-        <div class="bg-obsidian-sidebar border border-obsidian-border rounded-lg shadow-2xl p-6 max-w-sm w-full mx-4">
-            <h3 id="delete-modal-header" class="text-lg font-bold text-white mb-2">Delete Note?</h3>
-            <p class="text-sm text-neutral-400 mb-6"><span id="delete-modal-desc-before">Are you sure you want to permanently delete</span> "<span id="delete-modal-note-title" class="text-gray-200 font-semibold">Note</span>"? <span id="delete-modal-desc-after">This action cannot be undone.</span></p>
-            <div class="flex justify-end gap-3">
-                <button id="delete-modal-cancel-btn" onclick="closeDeleteModal()" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold rounded-md text-white transition-colors">Cancel</button>
-                <button id="delete-modal-confirm-btn" onclick="executeDeleteNote()" class="px-4 py-2 bg-red-700 hover:bg-red-600 text-xs font-semibold rounded-md text-white transition-colors">Delete</button>
+            <div id="palette-results" class="max-h-[60vh] overflow-y-auto p-2 flex flex-col gap-1 custom-scrollbar">
+                <!-- Results via JS -->
             </div>
-        </div>
-    </div>
-
-    <!-- DIFFERENTIAL SYNC & WebRTC ENGINE -->
-    <script>
-        // Initialize Global Diff-Match-Patch Instance for differential sync
-        window.dmp = new diff_match_patch();
-
-        // Algorithm to accurately shift a user's cursor dynamically when external patches alter the text
-        window.adjustCursorPos = function(cursorPos, diffs) {
-            let newPos = cursorPos;
-            let currentIdx = 0; 
-
-            for (let i = 0; i < diffs.length; i++) {
-                const op = diffs[i][0]; // 0: EQUAL, 1: INSERT, -1: DELETE
-                const text = diffs[i][1];
-                const len = text.length;
-
-                if (op === 0) { 
-                    currentIdx += len;
-                    if (currentIdx >= cursorPos) break;
-                } else if (op === 1) { 
-                    if (currentIdx <= cursorPos) {
-                        newPos += len;
-                    }
-                } else if (op === -1) { 
-                    if (currentIdx < cursorPos) {
-                        const overlap = Math.min(len, cursorPos - currentIdx);
-                        newPos -= overlap;
-                    }
-                    currentIdx += len; 
-                }
-            }
-            return newPos;
-        };
-
-        const randomNames = ["Astarion", "Shadowheart", "Gale", "Wyll", "Lae'zel", "Karlach", "Halsin", "Jaheira", "Minsc", "Minthara", "Volo", "Elminster", "Scratch", "Withers"];
-        const randomColors = ["#a855f7", "#ec4899", "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#06b6d4", "#84cc16", "#14b8a6"];
-        
-        const localUser = {
-            id: 'peer_' + Math.random().toString(36).substring(2, 9),
-            name: randomNames[Math.floor(Math.random() * randomNames.length)] + " " + Math.floor(100 + Math.random() * 900),
-            color: randomColors[Math.floor(Math.random() * randomColors.length)],
-            isTyping: false,
-            cursorPos: 0
-        };
-
-        let myPeer = null;
-        let connections = []; 
-        let remotePeersData = {}; 
-
-        // Standardized STUN servers to guarantee robust firewall hole-punching for WebRTC connections
-        const peerConfig = {
-            config: {
-                'iceServers': [
-                    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }
-                ]
-            }
-        };
-
-        function encodePayload(payload) {
-            try {
-                const jsonStr = JSON.stringify(payload);
-                const utf8Bytes = new TextEncoder().encode(jsonStr);
-                let binString = "";
-                const len = utf8Bytes.length;
-                for (let i = 0; i < len; i++) {
-                    binString += String.fromCharCode(utf8Bytes[i]);
-                }
-                return btoa(binString);
-            } catch (err) {
-                console.error("Payload encoding error:", err);
-                return null;
-            }
-        }
-
-        function decodePayload(b64) {
-            try {
-                const binString = atob(b64);
-                const len = binString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binString.charCodeAt(i);
-                }
-                const jsonStr = new TextDecoder().decode(bytes);
-                return JSON.parse(jsonStr);
-            } catch (err) {
-                console.error("Payload decoding error:", err);
-                return null;
-            }
-        }
-
-        window.initP2PEngine = function() {
-            const params = new URLSearchParams(window.location.search || window.location.hash.substring(1));
-            let roomId = params.get('room');
-            
-            // Clean trailing slashes from copy-pasting errors
-            if (roomId) roomId = roomId.trim().replace(/\/$/, '');
-
-            if (!roomId) {
-                setupHostPeer();
-            } else {
-                setupClientPeer(roomId);
-            }
-        };
-
-        function setupHostPeer() {
-            myPeer = new Peer(peerConfig);
-            myPeer.on('open', (id) => {
-                const baseUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState(null, '', `?room=${id}`);
-                updateP2PStatusIndicator(true, currentLang === 'pt-br' ? "Hospedeiro: Aguardando Pares" : "Host: Awaiting Peers");
-                setupPresenceHeartbeat();
-            });
-            myPeer.on('connection', handleNewConnection);
-            myPeer.on('error', () => showToast(i18n[currentLang].toastP2PError, "error"));
-        }
-
-        function setupClientPeer(targetRoomId) {
-            myPeer = new Peer(peerConfig);
-            myPeer.on('open', (id) => {
-                updateP2PStatusIndicator(true, currentLang === 'pt-br' ? "Conectando ao Hospedeiro..." : "Connecting to Host...");
-                const conn = myPeer.connect(targetRoomId, { reliable: true });
-                handleNewConnection(conn);
-                setupPresenceHeartbeat();
-            });
-            
-            // Allow clients to accept connections too (Mesh node tolerance)
-            myPeer.on('connection', handleNewConnection);
-
-            myPeer.on('error', (err) => {
-                console.error("PeerJS Connection Error:", err);
-                showToast(i18n[currentLang].toastP2PReachHostError, "error");
-                const cleanUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState(null, '', cleanUrl);
-                updateP2PStatusIndicator(false);
-                
-                // Fallback to Host mode so they aren't stuck in a dead state
-                if (err.type === 'peer-unavailable' || err.type === 'network') {
-                    setTimeout(() => {
-                        if (!myPeer.destroyed) myPeer.destroy();
-                        setupHostPeer();
-                    }, 500);
-                }
-            });
-        }
-
-        function handleNewConnection(conn) {
-            const onConnectionOpen = () => {
-                if (connections.includes(conn)) return; // Prevent double trigger
-                connections.push(conn);
-                const labelStatus = currentLang === 'pt-br' ? `${connections.length} Par(es) Ativo(s)` : `${connections.length} Peer(s) Active`;
-                updateP2PStatusIndicator(true, labelStatus);
-                showToast(i18n[currentLang].toastCollabConnected, "success");
-
-                const params = new URLSearchParams(window.location.search || window.location.hash.substring(1));
-                const isHost = !params.get('room') || myPeer.id === params.get('room');
-                
-                if (isHost) {
-                    const syncObj = {
-                        type: 'INITIAL_SYNC',
-                        vault: window.vault,
-                        activeNoteKey: window.activeNoteKey
-                    };
-                    const safePayload = encodePayload(syncObj);
-                    if (safePayload) conn.send({ __safe_payload: safePayload });
-                }
-            };
-
-            // Fix PeerJS Race Condition where 'open' fires before we can listen to it
-            if (conn.open) {
-                onConnectionOpen();
-            } else {
-                conn.on('open', onConnectionOpen);
-            }
-
-            conn.on('data', (data) => {
-                let msg = data && data.__safe_payload ? decodePayload(data.__safe_payload) : data;
-                handleIncomingMessage(msg, conn);
-            });
-            
-            conn.on('error', (err) => console.error("Peer connection error:", err));
-
-            conn.on('close', () => {
-                connections = connections.filter(c => c !== conn);
-                if (conn.peer) {
-                    delete remotePeersData[conn.peer];
-                    renderPresenceList();
-                    renderRemoteCursors();
-                }
-                const status = connections.length > 0 ? 
-                    (currentLang === 'pt-br' ? `${connections.length} Par(es) Ativo(s)` : `${connections.length} Peer(s) Active`) : 
-                    (currentLang === 'pt-br' ? "Aguardando Pares" : "Awaiting Peers");
-                updateP2PStatusIndicator(connections.length > 0, status);
-                showToast(i18n[currentLang].toastCollabDisconnected, "info");
-            });
-        }
-
-        function handleIncomingMessage(msg, senderConn) {
-            if (!msg || !msg.type) return;
-
-            switch(msg.type) {
-                case 'INITIAL_SYNC':
-                    if (msg.vault) {
-                        window.vault = msg.vault;
-                        if (msg.activeNoteKey) window.activeNoteKey = msg.activeNoteKey;
-                        window.renderVaultList();
-                        window.loadActiveNote();
-                        showToast(i18n[currentLang].toastSyncHost, "success");
-                    }
-                    break;
-
-                case 'VAULT_UPDATE':
-                    if (msg.vault) {
-                        window.vault = msg.vault;
-                        if (msg.activeNoteKey) window.activeNoteKey = msg.activeNoteKey;
-                        window.renderVaultList();
-                        window.loadActiveNote();
-                    }
-                    break;
-
-                case 'NOTE_PATCH':
-                    if (window.vault[msg.noteKey]) {
-                        const currentText = window.vault[msg.noteKey].content;
-                        const [patchedText, results] = window.dmp.patch_apply(msg.patches, currentText);
-                        window.vault[msg.noteKey].content = patchedText;
-
-                        if (window.activeNoteKey === msg.noteKey) {
-                            const textarea = document.getElementById("markdown-textarea");
-                            const focusActive = document.activeElement === textarea;
-                            const startSelection = textarea ? textarea.selectionStart : 0;
-                            const endSelection = textarea ? textarea.selectionEnd : 0;
-
-                            const diffs = window.dmp.diff_main(currentText, patchedText);
-                            window.dmp.diff_cleanupSemantic(diffs);
-
-                            const newStart = window.adjustCursorPos(startSelection, diffs);
-                            const newEnd = window.adjustCursorPos(endSelection, diffs);
-
-                            if (textarea) textarea.value = patchedText;
-                            window.renderActiveNote();
-
-                            if (focusActive && textarea) {
-                                textarea.focus();
-                                try { textarea.setSelectionRange(newStart, newEnd); } catch(e){}
-                                reportCursorMove();
-                            }
-                        } else {
-                            // Background note updated natively. Sync global stats and lists cleanly.
-                            window.updateGlobalProgressTracker();
-                            window.renderVaultList();
-                        }
-                    }
-                    break;
-
-                case 'PRESENCE':
-                    if (senderConn.peer) {
-                        const p = remotePeersData[senderConn.peer];
-                        const newNote = msg.activeNoteKey || window.activeNoteKey;
-                        
-                        // Detect Peer Note Jumping for Live Toasts Invitations
-                        if (p && p.activeNote && p.activeNote !== newNote) {
-                            if (newNote === window.activeNoteKey) {
-                                const existingToast = document.getElementById(`toast-nav-${senderConn.peer}`);
-                                if (existingToast) existingToast.remove();
-                            } else if (vault[newNote]) {
-                                window.showNavigationToast(senderConn.peer, msg.name, newNote);
-                            }
-                        }
-
-                        remotePeersData[senderConn.peer] = {
-                            name: msg.name,
-                            color: msg.color,
-                            isTyping: msg.isTyping,
-                            activeNote: newNote, 
-                            cursorPos: msg.cursorPos !== undefined ? msg.cursorPos : p?.cursorPos,
-                            timestamp: Date.now()
-                        };
-                        renderPresenceList();
-                        renderRemoteCursors();
-                    }
-                    break;
-
-                case 'CURSOR_MOVE':
-                    if (senderConn.peer && remotePeersData[senderConn.peer]) {
-                        const p = remotePeersData[senderConn.peer];
-                        const newNote = msg.noteKey;
-                        
-                        // Detect Fast Peer Cursor Jumps between files
-                        if (p.activeNote && p.activeNote !== newNote) {
-                            if (newNote === window.activeNoteKey) {
-                                const existingToast = document.getElementById(`toast-nav-${senderConn.peer}`);
-                                if (existingToast) existingToast.remove();
-                            } else if (vault[newNote]) {
-                                window.showNavigationToast(senderConn.peer, p.name, newNote);
-                            }
-                        }
-                        
-                        p.cursorPos = msg.pos;
-                        p.activeNote = newNote;
-                        renderRemoteCursors();
-                    }
-                    break;
-            }
-
-            const params = new URLSearchParams(window.location.search || window.location.hash.substring(1));
-            const isHost = !params.get('room') || myPeer.id === params.get('room');
-            if (isHost && msg.type !== 'PRESENCE' && msg.type !== 'CURSOR_MOVE') {
-                broadcastMessageToPeers(msg, senderConn);
-            }
-        }
-
-        function broadcastMessageToPeers(msg, excludeConn = null) {
-            const safePayload = encodePayload(msg);
-            if (!safePayload) return;
-            connections.forEach(conn => {
-                if (conn !== excludeConn && conn.open) {
-                    conn.send({ __safe_payload: safePayload });
-                }
-            });
-        }
-
-        function setupPresenceHeartbeat() {
-            setInterval(() => {
-                if (!myPeer || myPeer.destroyed) return;
-                broadcastMessageToPeers({
-                    type: 'PRESENCE',
-                    name: localUser.name,
-                    color: localUser.color,
-                    isTyping: localUser.isTyping,
-                    activeNoteKey: window.activeNoteKey,
-                    cursorPos: localUser.cursorPos
-                });
-
-                const now = Date.now();
-                let dirty = false;
-                Object.keys(remotePeersData).forEach(peerId => {
-                    if (now - remotePeersData[peerId].timestamp > 25000) {
-                        delete remotePeersData[peerId];
-                        dirty = true;
-                    }
-                });
-                if (dirty) {
-                    renderPresenceList();
-                    renderRemoteCursors();
-                }
-            }, 5000);
-        }
-
-        let cursorMoveTimeout;
-        window.reportCursorMove = function() {
-            const textarea = document.getElementById('markdown-textarea');
-            if (!textarea || document.activeElement !== textarea) return;
-            const pos = textarea.selectionStart;
-            
-            if (localUser.cursorPos !== pos) {
-                localUser.cursorPos = pos;
-                clearTimeout(cursorMoveTimeout);
-                cursorMoveTimeout = setTimeout(() => {
-                    if (!myPeer || myPeer.destroyed) return;
-                    broadcastMessageToPeers({
-                        type: 'CURSOR_MOVE',
-                        peerId: myPeer.id,
-                        pos: pos,
-                        noteKey: window.activeNoteKey
-                    });
-                }, 40);
-            }
-        };
-
-        // DOM Logic to calculate exact X/Y for overlaying live colored cursors on the textarea
-        function getCaretCoordinates(element, position) {
-            let mirror = document.getElementById('caret-mirror');
-            if (!mirror) {
-                mirror = document.createElement('div');
-                mirror.id = 'caret-mirror';
-                document.body.appendChild(mirror);
-            }
-            
-            const style = window.getComputedStyle(element);
-            mirror.style.fontFamily = style.fontFamily;
-            mirror.style.fontSize = style.fontSize;
-            mirror.style.lineHeight = style.lineHeight;
-            mirror.style.padding = style.padding;
-            // Force precise matching size without scrollbar discrepancy
-            mirror.style.width = element.clientWidth + 'px'; 
-            mirror.style.boxSizing = style.boxSizing;
-
-            const text = element.value.substring(0, position);
-            mirror.textContent = text;
-
-            const span = document.createElement('span');
-            span.textContent = element.value.substring(position) || '.';
-            mirror.appendChild(span);
-
-            return {
-                top: span.offsetTop,
-                left: span.offsetLeft,
-                height: parseFloat(style.lineHeight) || 24
-            };
-        }
-
-        window.renderRemoteCursors = function() {
-            const editorContainer = document.getElementById('editor-cursors-layer');
-            const previewContainer = document.getElementById('rendered-preview');
-            const textarea = document.getElementById('markdown-textarea');
-            if (!editorContainer || !textarea || !previewContainer) return;
-
-            editorContainer.innerHTML = '';
-            document.querySelectorAll('.preview-remote-cursor').forEach(el => el.remove());
-
-            Object.keys(remotePeersData).forEach(peerId => {
-                const p = remotePeersData[peerId];
-                if (p.activeNote === activeNoteKey && p.cursorPos !== undefined) {
-                    
-                    // 1. Render Editor Textarea Cursor
-                    try {
-                        const coords = getCaretCoordinates(textarea, p.cursorPos);
-                        const cursorEl = document.createElement('div');
-                        cursorEl.className = 'remote-cursor shadow-sm';
-                        cursorEl.style.backgroundColor = p.color;
-                        cursorEl.style.height = coords.height + 'px';
-                        cursorEl.style.top = (coords.top - textarea.scrollTop) + 'px';
-                        cursorEl.style.left = coords.left + 'px';
-
-                        const flagEl = document.createElement('div');
-                        flagEl.className = 'remote-cursor-flag';
-                        flagEl.style.backgroundColor = p.color;
-                        flagEl.innerText = p.name.split(' ')[0]; // Display First Name
-                        
-                        cursorEl.appendChild(flagEl);
-                        editorContainer.appendChild(cursorEl);
-                    } catch(e) { console.warn("Could not render editor cursor", e); }
-
-                    // 2. Render Live Floating Preview Cursor badge next to the block
-                    try {
-                        const content = window.vault[activeNoteKey].content;
-                        let lineIndex = (content.substring(0, p.cursorPos).match(/\n/g) || []).length;
-                        
-                        let targetEl = previewContainer.querySelector(`[data-line="${lineIndex}"]`);
-                        if (!targetEl) {
-                            for (let i = lineIndex; i >= 0; i--) {
-                                targetEl = previewContainer.querySelector(`[data-line="${i}"]`);
-                                if (targetEl) break;
-                            }
-                        }
-
-                        if (targetEl) {
-                            targetEl.classList.add('relative');
-                            const indicator = document.createElement('div');
-                            indicator.className = 'preview-remote-cursor absolute flex items-center justify-center text-[9px] font-bold text-white rounded shadow-md z-10 border border-obsidian-bg';
-                            indicator.style.backgroundColor = p.color;
-                            indicator.style.padding = '2px 6px';
-                            indicator.style.top = '-6px';
-                            indicator.style.right = '100%';
-                            indicator.style.marginRight = '12px';
-                            indicator.innerText = p.name.split(' ')[0];
-                            indicator.title = p.name + " is editing here";
-                            
-                            targetEl.appendChild(indicator);
-                        }
-                    } catch(e) { console.warn("Could not render preview cursor", e); }
-                }
-            });
-        };
-
-        function renderPresenceList() {
-            const avatarContainer = document.getElementById("presence-avatars");
-            const typingNotification = document.getElementById("typing-notification");
-            const typingText = document.getElementById("typing-notification-text");
-
-            avatarContainer.innerHTML = '';
-            let typingNames = [];
-
-            const localDiv = document.createElement("div");
-            localDiv.className = `w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-obsidian-sidebar shrink-0 cursor-help`;
-            localDiv.style.backgroundColor = localUser.color;
-            localDiv.title = `${localUser.name} (${currentLang === 'pt-br' ? 'Você' : 'You'}) - ${currentLang === 'pt-br' ? 'Editando' : 'Editing'}: ${window.vault[window.activeNoteKey]?.title}`;
-            localDiv.innerText = localUser.name.slice(0, 2).toUpperCase();
-            avatarContainer.appendChild(localDiv);
-
-            Object.keys(remotePeersData).forEach(peerId => {
-                const p = remotePeersData[peerId];
-                const div = document.createElement("div");
-                div.className = `w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-obsidian-sidebar shrink-0 cursor-help`;
-                div.style.backgroundColor = p.color;
-                
-                // Active note name lookup safeguard 
-                const noteName = window.vault[p.activeNote]?.title || "Unknown File";
-                div.title = `${p.name} - ${currentLang === 'pt-br' ? 'Editando' : 'Editing'}: ${noteName}`;
-                div.innerText = p.name.slice(0, 2).toUpperCase();
-                avatarContainer.appendChild(div);
-
-                if (p.isTyping) typingNames.push(p.name);
-            });
-
-            if (typingNames.length > 0) {
-                typingNotification.classList.remove("hidden");
-                typingText.innerText = `${typingNames.join(', ')} ${currentLang === 'pt-br' ? 'escrevendo...' : 'typing...'}`;
-            } else {
-                typingNotification.classList.add("hidden");
-            }
-        }
-
-        function updateP2PStatusIndicator(active, statusText = "Ready") {
-            const badge = document.getElementById("connection-mode-badge");
-            const panel = document.getElementById("collab-status-container");
-            const indicatorText = document.getElementById("collab-status-text");
-
-            if (active) {
-                badge.innerText = i18n[currentLang].p2pMode;
-                badge.className = "px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-semibold text-[10px] border border-emerald-800/40";
-                panel.classList.remove("hidden");
-                indicatorText.innerText = statusText;
-            } else {
-                badge.innerText = i18n[currentLang].localMode;
-                badge.className = "px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 font-semibold text-[10px]";
-                panel.classList.add("hidden");
-            }
-        }
-
-        // Trigger Granular Patch Updates to Peers
-        window.broadcastNotePatch = function(noteKey, oldText, newText) {
-            const patches = window.dmp.patch_make(oldText, newText);
-            
-            if (patches.length === 0) return; 
-
-            broadcastMessageToPeers({
-                type: 'NOTE_PATCH',
-                noteKey: noteKey,
-                patches: patches
-            });
-
-            localUser.isTyping = true;
-            broadcastMessageToPeers({ type: 'PRESENCE', name: localUser.name, color: localUser.color, isTyping: true, activeNoteKey: window.activeNoteKey, cursorPos: localUser.cursorPos });
-            
-            if (window.typingIndicatorTimeout) clearTimeout(window.typingIndicatorTimeout);
-            window.typingIndicatorTimeout = setTimeout(() => {
-                localUser.isTyping = false;
-                broadcastMessageToPeers({ type: 'PRESENCE', name: localUser.name, color: localUser.color, isTyping: false, activeNoteKey: window.activeNoteKey, cursorPos: localUser.cursorPos });
-            }, 1200);
-        };
-
-        window.triggerP2PVaultStructureUpdate = function() {
-            broadcastMessageToPeers({
-                type: 'VAULT_UPDATE',
-                vault: window.vault,
-                activeNoteKey: window.activeNoteKey
-            });
-        };
-    </script>
-
-    <!-- Theme Accent Management Strategy -->
-    <script>
-        window.toggleThemeDropdown = function(event) {
-            if (event) event.stopPropagation();
-            const dropdown = document.getElementById('theme-dropdown');
-            if (dropdown) dropdown.classList.toggle('hidden');
-        };
-
-        window.changeTheme = function(themeKey) {
-            const palettes = {
-                purple: { color: '#a855f7', hover: '#c084fc', muted: '#d8b4fe', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)', gradientStart: '#a855f7', gradientEnd: '#6366f1' },
-                emerald: { color: '#10b981', hover: '#34d399', muted: '#a7f3d0', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)', gradientStart: '#10b981', gradientEnd: '#3b82f6' },
-                indigo: { color: '#6366f1', hover: '#818cf8', muted: '#c7d2fe', bg: 'rgba(99, 102, 241, 0.15)', border: 'rgba(99, 102, 241, 0.3)', gradientStart: '#6366f1', gradientEnd: '#ec4899' },
-                amber: { color: '#f59e0b', hover: '#fbbf24', muted: '#fde68a', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)', gradientStart: '#f59e0b', gradientEnd: '#ef4444' },
-                rose: { color: '#f43f5e', hover: '#fb7185', muted: '#fecdd3', bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(244, 63, 94, 0.3)', gradientStart: '#f43f5e', gradientEnd: '#a855f7' }
-            };
-            const palette = palettes[themeKey] || palettes.purple;
-            const root = document.documentElement;
-            root.style.setProperty('--accent-color', palette.color);
-            root.style.setProperty('--accent-hover', palette.hover);
-            root.style.setProperty('--accent-muted', palette.muted);
-            root.style.setProperty('--accent-bg', palette.bg);
-            root.style.setProperty('--accent-border', palette.border);
-            root.style.setProperty('--accent-gradient-start', palette.gradientStart);
-            root.style.setProperty('--accent-gradient-end', palette.gradientEnd);
-            localStorage.setItem('caderno_theme_accent', themeKey);
-            
-            // Hide the dropdown after selection
-            const dropdown = document.getElementById('theme-dropdown');
-            if (dropdown) dropdown.classList.add('hidden');
-            
-            showToast(currentLang === 'pt-br' ? "Tema alterado com sucesso!" : "Theme accent updated successfully!", "success");
-        };
-
-        // Add a general window click listener to close the dropdown when clicking outside
-        window.addEventListener('click', function(e) {
-            const dropdown = document.getElementById('theme-dropdown');
-            const pickerBtn = document.getElementById('btn-theme-picker');
-            if (dropdown && pickerBtn && !pickerBtn.contains(e.target) && !dropdown.contains(e.target)) {
-                dropdown.classList.add('hidden');
-            }
-        });
-    </script>
-
-    <!-- Language Translation Strategy -->
-    <script>
-        const i18n = {
-            'en': {
-                vaultTitle: "CADERNO",
-                breadcrumbFolder: "notebook",
-                collabConnecting: "Connecting live...",
-                collabActive: "Peer(s) Active",
-                collabAwaiting: "Awaiting Peers",
-                shareBtn: "Share Live Session",
-                quickSearch: "Quick Search",
-                searchNotes: "Search notes...",
-                campaignNotes: "My Notes",
-                overallCompletion: "Task Completion",
-                modeEdit: "Edit",
-                modeReading: "Reading",
-                modeSplit: "Split",
-                campaignTracker: "Task Progress Tracker",
-                calculating: "Calculating objectives...",
-                titlePlaceholder: "Untitled Note",
-                wordCount: "words",
-                localMode: "LOCAL STORAGE ONLY",
-                p2pMode: "P2P SYNC ACTIVE",
-                documentOutline: "Document Outline",
-                noHeadings: "No headings found in document.",
-                noContent: "No content in this note. Write something to begin!",
-                palettePlaceholder: "Type to search notes and headings...",
-                selectFile: "Select File",
-                jumpToSec: "Jump to Sec",
-                noMatches: "No matching titles or headings found.",
-                deleteTitle: "Delete Note?",
-                deleteDescBefore: "Are you sure you want to permanently delete",
-                deleteDescAfter: "This action cannot be undone.",
-                cancel: "Cancel",
-                delete: "Delete",
-                toastCreated: "Created a new note",
-                toastDeleted: "Deleted \"{title}\"",
-                toastQuestCompleted: "Task completed!",
-                toastQuestReset: "Task reset",
-                toastSyncHost: "Notebook initialized from Host!",
-                toastCollabConnected: "Connected successfully with a collaborator!",
-                toastCollabDisconnected: "Collaborator disconnected.",
-                toastP2PError: "P2P Signalling Error. Operating in offline fallback mode.",
-                toastP2PReachHostError: "Could not reach host. Starting standalone session.",
-                toastDownloaded: "Downloaded \"{title}\"",
-                downloadTooltip: "Download note as .md file",
-                downloadBtnLabel: "Download .md"
-            },
-            'pt-br': {
-                vaultTitle: "CADERNO",
-                breadcrumbFolder: "caderno",
-                collabConnecting: "Conectando ao vivo...",
-                collabActive: "Par(es) Ativo(s)",
-                collabAwaiting: "Aguardando Pares",
-                shareBtn: "Compartilhar Sessão",
-                quickSearch: "Busca Rápida",
-                searchNotes: "Buscar notas...",
-                campaignNotes: "Minhas Notas",
-                overallCompletion: "Progresso de Tarefas",
-                modeEdit: "Editar",
-                modeReading: "Leitura",
-                modeSplit: "Dividido",
-                campaignTracker: "Rastreador de Tarefas",
-                calculating: "Calculando objetivos...",
-                titlePlaceholder: "Nota sem Título",
-                wordCount: "palavras",
-                localMode: "APENAS STORAGE LOCAL",
-                p2pMode: "SINCRONIZAÇÃO P2P ATIVA",
-                documentOutline: "Sumário do Documento",
-                noHeadings: "Nenhum cabeçalho encontrado no documento.",
-                noContent: "Nenhum conteúdo nesta nota. Escreva algo para começar!",
-                palettePlaceholder: "Digite para buscar notas e cabeçalhos...",
-                selectFile: "Selecionar Arquivo",
-                jumpToSec: "Ir para Seção",
-                noMatches: "Nenhum título ou cabeçalho encontrado.",
-                deleteTitle: "Excluir Nota?",
-                deleteDescBefore: "Tem certeza de que deseja excluir permanentemente",
-                deleteDescAfter: "Esta ação não pode ser desfeita.",
-                cancel: "Cancelar",
-                delete: "Excluir",
-                toastCreated: "Nova nota criada",
-                toastDeleted: "Excluído \"{title}\"",
-                toastQuestCompleted: "Tarefa concluída!",
-                toastQuestReset: "Tarefa reiniciada!",
-                toastSyncHost: "Caderno inicializado pelo Hospedeiro!",
-                toastCollabConnected: "Conectado com sucesso a um colaborador!",
-                toastCollabDisconnected: "Colaborador desconectado.",
-                toastP2PError: "Erro de Sinalização P2P. Operando em modo offline.",
-                toastP2PReachHostError: "Não foi possível alcançar o hospedeiro. Iniciando sessão autônoma.",
-                toastDownloaded: "\"{title}\" baixado com sucesso!",
-                downloadTooltip: "Baixar nota como arquivo .md",
-                downloadBtnLabel: "Baixar .md"
-            }
-        };
-
-        const svgBr = `<svg class="w-5 h-3.5 rounded shadow-sm border border-neutral-700/50 shrink-0" viewBox="0 0 720 500" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="720" height="500" fill="#009c3b"/><polygon points="360,80 80,250 360,420 640,250" fill="#ffdf00"/><circle cx="360" cy="250" r="120" fill="#002171"/><path d="M 240,250 A 120,120 0 0,0 480,250" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/></svg>`;
-        const svgEn = `<svg class="w-5 h-3.5 rounded shadow-sm border border-neutral-700/50 shrink-0" viewBox="0 0 20 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="14" fill="#B91C1C"/><path d="M0 1H20M0 3H20M0 5H20M0 7H20M0 9H20M0 11H20M0 13H20" stroke="#FFFFFF" stroke-width="1"/><rect width="9" height="7" fill="#1E3A8A"/><circle cx="2" cy="2" r="0.4" fill="white"/><circle cx="4" cy="2" r="0.4" fill="white"/><circle cx="6" cy="2" r="0.4" fill="white"/><circle cx="3" cy="3.5" r="0.4" fill="white"/><circle cx="5" cy="3.5" r="0.4" fill="white"/><circle cx="2" cy="5" r="0.4" fill="white"/><circle cx="4" cy="5" r="0.4" fill="white"/><circle cx="6" cy="5" r="0.4" fill="white"/></svg>`;
-
-        let currentLang = 'en';
-
-        function initLanguageSystem() {
-            const savedLanguage = localStorage.getItem("caderno_language");
-            if (savedLanguage === 'en' || savedLanguage === 'pt-br') {
-                currentLang = savedLanguage;
-            } else {
-                const browserLocale = (navigator.language || navigator.userLanguage || "").toLowerCase();
-                currentLang = browserLocale.startsWith("pt") ? 'pt-br' : 'en';
-            }
-            applyUILanguage(currentLang);
-        }
-
-        function toggleLanguage() {
-            const nextLang = currentLang === 'en' ? 'pt-br' : 'en';
-            currentLang = nextLang;
-            localStorage.setItem("caderno_language", nextLang);
-            applyUILanguage(nextLang);
-            showToast(nextLang === 'pt-br' ? "Idioma alterado para Português!" : "Language changed to English!", "info");
-        }
-
-        function applyUILanguage(lang) {
-            const t = i18n[lang];
-            
-            document.getElementById('vault-logo-text').innerText = t.vaultTitle;
-            document.getElementById('breadcrumb-vault-label').innerText = t.breadcrumbFolder;
-            document.getElementById('share-btn-text').innerText = t.shareBtn;
-            document.getElementById('quick-search-text').innerText = t.quickSearch;
-            document.getElementById('note-search').placeholder = t.searchNotes;
-            document.getElementById('campaign-notes-title').innerText = t.campaignNotes;
-            document.getElementById('overall-completion-title').innerText = t.overallCompletion;
-            document.getElementById('campaign-tracker-title').innerText = t.campaignTracker;
-            document.getElementById('title-header-label').innerText = lang === 'pt-br' ? 'TÍTULO' : 'TITLE';
-            document.getElementById('outline-panel-title').innerText = t.documentOutline;
-            document.getElementById('palette-search').placeholder = t.palettePlaceholder;
-            
-            document.getElementById('delete-modal-header').innerText = t.deleteTitle;
-            document.getElementById('delete-modal-desc-before').innerText = t.deleteDescBefore;
-            document.getElementById('delete-modal-desc-after').innerText = t.deleteDescAfter;
-            document.getElementById('delete-modal-cancel-btn').innerText = t.cancel;
-            document.getElementById('delete-modal-confirm-btn').innerText = t.delete;
-
-            document.getElementById('btn-edit-mode').innerHTML = `<i class="fa-solid fa-code mr-1"></i> ` + t.modeEdit;
-            document.getElementById('btn-reading-mode').innerHTML = `<i class="fa-solid fa-book-open mr-1"></i> ` + t.modeReading;
-            document.getElementById('btn-split-mode').innerHTML = `<i class="fa-solid fa-columns mr-1"></i> ` + t.modeSplit;
-
-            const flagContainer = document.getElementById('active-flag-container');
-            const langCodeLabel = document.getElementById('active-lang-code');
-            if (lang === 'pt-br') {
-                flagContainer.innerHTML = svgBr;
-                langCodeLabel.innerText = 'PT-BR';
-            } else {
-                flagContainer.innerHTML = svgEn;
-                langCodeLabel.innerText = 'EN';
-            }
-
-            if (connections.length > 0) {
-                document.getElementById('collab-status-text').innerText = `${connections.length} ${t.collabActive}`;
-            } else {
-                const isConnecting = myPeer && !myPeer.destroyed;
-                document.getElementById('collab-status-text').innerText = isConnecting ? t.collabConnecting : t.collabAwaiting;
-            }
-
-            const badge = document.getElementById("connection-mode-badge");
-            if (badge.innerText.includes("ACTIVE") || badge.innerText.includes("ATIVA")) {
-                badge.innerText = t.p2pMode;
-            } else {
-                badge.innerText = t.localMode;
-            }
-
-            const downloadBtnText = document.getElementById('download-btn-text');
-            if (downloadBtnText) {
-                downloadBtnText.innerText = t.downloadBtnLabel;
-                downloadBtnText.parentElement.title = t.downloadTooltip;
-            }
-
-            renderVaultList();
-            renderActiveNote();
-        }
-    </script>
-
-    <script>
-        /* CORE VAULT & APP STATE */
-        var vault = {};
-        var activeNoteKey = "";
-        let viewMode = "split"; 
-        let searchFilter = "";
-        let isScrolling = false;
-        let deleteCandidateKey = null;
-
-        window.initializeVaultState = function() {
-            if (window.vaultInitialized) return;
-            initLanguageSystem();
-
-            const savedVault = localStorage.getItem("caderno_vault");
-            if (savedVault) {
-                try {
-                    vault = JSON.parse(savedVault);
-                } catch(e) {
-                    loadDefaultVault(currentLang);
-                }
-            } else {
-                loadDefaultVault(currentLang);
-            }
-
-            const savedActiveKey = localStorage.getItem("caderno_active_key");
-            if (savedActiveKey && vault[savedActiveKey]) {
-                activeNoteKey = savedActiveKey;
-            } else {
-                activeNoteKey = Object.keys(vault)[0] || "";
-            }
-
-            window.vaultInitialized = true;
-        };
-
-        window.initializeVaultState();
-
-        window.onload = function() {
-            initSidebars();
-            window.initializeVaultState();
-            renderVaultList();
-            loadActiveNote();
-            setViewMode("split");
-            window.initP2PEngine();
-
-            // Setup ResizeObserver for smart line-wrapping detection
-            const textarea = document.getElementById('markdown-textarea');
-            if (textarea) {
-                new ResizeObserver(() => {
-                    if (window.updateLineNumbers) window.updateLineNumbers();
-                }).observe(textarea);
-            }
-
-            window.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') {
-                    closeCommandPalette();
-                    closeDeleteModal();
-                }
-                if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                    e.preventDefault();
-                    openCommandPalette();
-                }
-                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
-                    e.preventDefault();
-                    toggleSidebar('left-sidebar');
-                }
-                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'o') {
-                    e.preventDefault();
-                    toggleSidebar('right-sidebar');
-                }
-            });
-        };
-
-        function loadDefaultVault(lang) {
-            vault = {
-                "project_roadmap": {
-                    title: lang === 'pt-br' ? "Roteiro do Projeto & Tarefas" : "Project Roadmap & Tasks",
-                    content: getRoadmapMarkdown(lang)
-                },
-                "welcome_guide": {
-                    title: lang === 'pt-br' ? "Bem-vindo ao Caderno" : "Welcome to Caderno",
-                    content: getWelcomeGuideMarkdown(lang)
-                }
-            };
-            saveVaultLocalOnly();
-        }
-
-        // Dedicated local saver. Prevents unnecessary network broadcasting when simply switching tabs.
-        function saveVaultLocalOnly() {
-            localStorage.setItem("caderno_vault", JSON.stringify(vault));
-            localStorage.setItem("caderno_active_key", activeNoteKey);
-            updateGlobalProgressTracker();
-        }
-
-        function saveVaultStructure() {
-            saveVaultLocalOnly();
-            if (window.triggerP2PVaultStructureUpdate) {
-                window.triggerP2PVaultStructureUpdate();
-            }
-        }
-
-        function renderMarkdown(markdownText) {
-            if (!markdownText) return `<p class="text-neutral-500 italic">${i18n[currentLang].noContent}</p>`;
-            
-            const lines = markdownText.split('\n');
-            let html = '';
-            let inCodeBlock = false;
-            let codeBlockContent = '';
-            let codeBlockStartLine = 0;
-
-            lines.forEach((line, index) => {
-                if (line.trim().startsWith('```')) {
-                    if (inCodeBlock) {
-                        html += `<pre class="bg-neutral-900 border border-neutral-800 p-3 rounded-lg my-2 font-mono text-xs overflow-x-auto text-purple-300"><code>${escapeHTML(codeBlockContent)}</code></pre>`;
-                        codeBlockContent = '';
-                        inCodeBlock = false;
-                    } else {
-                        inCodeBlock = true;
-                        codeBlockStartLine = index;
-                    }
-                    return;
-                }
-
-                if (inCodeBlock) {
-                    codeBlockContent += line + '\n';
-                    return;
-                }
-
-                if (line.trim() === '---') {
-                    html += `<hr class="border-obsidian-border my-5" />`;
-                    return;
-                }
-
-                if (line.startsWith('# ')) {
-                    html += `<h1 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${parseInlineElements(line.slice(2))}</h1>`;
-                    return;
-                }
-                if (line.startsWith('## ')) {
-                    html += `<h2 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${parseInlineElements(line.slice(3))}</h2>`;
-                    return;
-                }
-                if (line.startsWith('### ')) {
-                    html += `<h3 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${parseInlineElements(line.slice(4))}</h3>`;
-                    return;
-                }
-                if (line.startsWith('#### ')) {
-                    html += `<h4 id="heading-${index}" class="text-white hover:text-obsidian-accent cursor-pointer transition-colors font-sans" onclick="scrollEditorToLine(${index})">${parseInlineElements(line.slice(5))}</h4>`;
-                    return;
-                }
-
-                const checkboxRegex = /^(\s*)-\s*\[([ xX])\]\s*(.*)$/;
-                const checkboxMatch = line.match(checkboxRegex);
-                if (checkboxMatch) {
-                    const spaces = checkboxMatch[1].length;
-                    const isChecked = checkboxMatch[2].toLowerCase() === 'x';
-                    const mainText = parseInlineElements(checkboxMatch[3]);
-                    const paddingLeft = spaces * 8; 
-
-                    html += `
-                    <div class="task-item flex items-start gap-2.5 py-1 px-1.5 rounded-md hover:bg-neutral-800/30 transition-all font-sans" style="margin-left: ${paddingLeft}px">
-                        <input type="checkbox" ${isChecked ? 'checked' : ''} data-line-index="${index}" class="obsidian-checkbox mt-1 flex-shrink-0">
-                        <span class="text-gray-300 ${isChecked ? 'line-through text-neutral-500' : ''} text-sm leading-relaxed">${mainText}</span>
-                    </div>`;
-                    return;
-                }
-
-                const bulletRegex = /^(\s*)-\s*(.*)$/;
-                const bulletMatch = line.match(bulletRegex);
-                if (bulletMatch) {
-                    const spaces = bulletMatch[1].length;
-                    const mainText = parseInlineElements(bulletMatch[2]);
-                    const paddingLeft = spaces * 8;
-
-                    html += `
-                    <div class="bullet-item flex items-start gap-2.5 py-0.5 font-sans" style="margin-left: ${paddingLeft}px">
-                        <span class="text-obsidian-accent select-none mt-2 w-1.5 h-1.5 rounded-full bg-obsidian-accent flex-shrink-0"></span>
-                        <span class="text-gray-300 text-sm leading-relaxed">${mainText}</span>
-                    </div>`;
-                    return;
-                }
-
-                if (line.trim() === '') {
-                    html += `<div class="h-2"></div>`;
-                    return;
-                }
-
-                html += `<p class="text-sm my-1 font-sans">${parseInlineElements(line)}</p>`;
-            });
-
-            return html;
-        }
-
-        function parseInlineElements(text) {
-            let parsed = escapeHTML(text);
-            parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-white">$1</strong>');
-            parsed = parsed.replace(/__(.*?)__/g, '<strong class="font-bold text-white">$1</strong>');
-            parsed = parsed.replace(/\*(.*?)\*/g, '<em class="italic">$1</em>');
-            parsed = parsed.replace(/_(.*?)_/g, '<em class="italic">$1</em>');
-            parsed = parsed.replace(/==(.*?)==/g, '<mark class="bg-purple-900/40 text-purple-300 border border-purple-800/40 px-1 py-0.5 rounded text-xs font-semibold">$1</mark>');
-            parsed = parsed.replace(/`(.*?)`/g, '<code class="bg-neutral-800 border border-neutral-700 px-1.5 py-0.5 rounded font-mono text-xs text-purple-300">$1</code>');
-            parsed = parsed.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" class="text-purple-400 hover:text-purple-300 font-semibold underline inline-flex items-center gap-1">$1 <i class="fa-solid fa-external-link text-[10px] opacity-70"></i></a>');
-            return parsed;
-        }
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, tag => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-            }[tag] || tag));
-        }
-
-        function loadActiveNote() {
-            const note = vault[activeNoteKey];
-            if (!note) return;
-
-            document.getElementById('breadcrumb-filename').innerText = note.title + ".md";
-            document.getElementById('active-tab-title').innerText = note.title;
-            document.getElementById('note-title-input').value = note.title;
-
-            const textarea = document.getElementById('markdown-textarea');
-            textarea.value = note.content;
-
-            renderActiveNote();
-        }
-
-        function renderActiveNote() {
-            const note = vault[activeNoteKey];
-            if (!note) return;
-
-            const preview = document.getElementById('rendered-preview');
-            preview.innerHTML = renderMarkdown(note.content);
-
-            if (window.updateLineNumbers) window.updateLineNumbers();
-            updateWordCount(note.content);
-            renderOutline(note.content);
-            updateChecklistProgress(note.content);
-            
-            // Re-apply live cursors onto the newly rendered DOM payload
-            if (window.renderRemoteCursors) window.renderRemoteCursors();
-        }
-
-        // Smart Line-Wrap Tracking Algorithm
-        let updateLineNumbersTimeout = null;
-        window.updateLineNumbers = function() {
-            const textarea = document.getElementById('markdown-textarea');
-            const container = document.getElementById('line-numbers');
-            if (!textarea || !container) return;
-
-            if (updateLineNumbersTimeout) clearTimeout(updateLineNumbersTimeout);
-            
-            updateLineNumbersTimeout = setTimeout(() => {
-                const lines = textarea.value.split('\n');
-                
-                let mirror = document.getElementById('line-mirror');
-                if (!mirror) {
-                    mirror = document.createElement('div');
-                    mirror.id = 'line-mirror';
-                    textarea.parentElement.appendChild(mirror);
-                    mirror.style.position = 'absolute';
-                    mirror.style.visibility = 'hidden';
-                    mirror.style.pointerEvents = 'none';
-                    mirror.style.top = '0';
-                    mirror.style.left = '0';
-                    mirror.style.zIndex = '-999';
-                }
-                
-                // Copy critical styling measurements to simulate exact word wraps natively
-                const computed = window.getComputedStyle(textarea);
-                mirror.style.fontFamily = computed.fontFamily;
-                mirror.style.fontSize = computed.fontSize;
-                mirror.style.lineHeight = computed.lineHeight;
-                mirror.style.padding = computed.padding;
-                mirror.style.border = 'none'; 
-                mirror.style.width = textarea.clientWidth + 'px'; 
-                mirror.style.whiteSpace = 'pre-wrap';
-                mirror.style.wordWrap = 'break-word';
-                mirror.style.boxSizing = 'border-box';
-
-                let mirrorHTML = '';
-                lines.forEach(line => {
-                    // Inject zero-width space on empty lines to accurately measure blank line heights
-                    mirrorHTML += `<div>${escapeHTML(line) || '&#8203;'}</div>`;
-                });
-                mirror.innerHTML = mirrorHTML;
-                
-                const childNodes = mirror.childNodes;
-                let numbersHTML = '';
-                
-                for (let i = 0; i < childNodes.length; i++) {
-                    const height = childNodes[i].getBoundingClientRect().height;
-                    // Provide the line number, aligned to the top of the wrapping text block
-                    numbersHTML += `<div style="height: ${height}px; display: flex; align-items: flex-start; justify-content: flex-end;">${i + 1}</div>`;
-                }
-                
-                container.innerHTML = numbersHTML;
-            }, 15);
-        };
-
-        function updateWordCount(text) {
-            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-            document.getElementById('word-count').innerText = `${words} ${i18n[currentLang].wordCount}`;
-        }
-
-        /* Checkbox Click with Diff/Patch Sync Upgrade */
-        document.addEventListener('change', function(e) {
-            if (e.target.classList.contains('obsidian-checkbox')) {
-                const lineIndex = parseInt(e.target.getAttribute('data-line-index'));
-                const isChecked = e.target.checked;
-
-                const textarea = document.getElementById('markdown-textarea');
-                const lines = textarea.value.split('\n');
-                const targetLine = lines[lineIndex];
-
-                if (isChecked) {
-                    lines[lineIndex] = targetLine.replace(/-\s*\[\s*\]/, '- [x]');
-                } else {
-                    lines[lineIndex] = targetLine.replace(/-\s*\[[xX]\]/, '- [ ]');
-                }
-
-                const oldText = vault[activeNoteKey].content;
-                const updatedContent = lines.join('\n');
-                
-                textarea.value = updatedContent;
-                vault[activeNoteKey].content = updatedContent;
-
-                saveVaultLocalOnly();
-                if (window.broadcastNotePatch) {
-                    window.broadcastNotePatch(activeNoteKey, oldText, updatedContent);
-                }
-
-                renderActiveNote();
-                showToast(isChecked ? i18n[currentLang].toastQuestCompleted : i18n[currentLang].toastQuestReset, "success");
-            }
-        });
-
-        // Trigger Sync AND reposition overlay cursors when the editor area is scrolled
-        window.handleEditorScroll = function() {
-            syncScroll('editor');
-            if (window.renderRemoteCursors) window.renderRemoteCursors();
-        };
-
-        function syncScroll(source) {
-            if (isScrolling) return;
-            isScrolling = true;
-
-            const textarea = document.getElementById('markdown-textarea');
-            const preview = document.getElementById('preview-container');
-            const lineNumbers = document.getElementById('line-numbers');
-
-            if (source === 'editor') {
-                const pct = textarea.scrollTop / (textarea.scrollHeight - textarea.clientHeight);
-                preview.scrollTop = pct * (preview.scrollHeight - preview.clientHeight);
-                lineNumbers.scrollTop = textarea.scrollTop;
-            } else {
-                const pct = preview.scrollTop / (preview.scrollHeight - preview.clientHeight);
-                textarea.scrollTop = pct * (textarea.scrollHeight - textarea.clientHeight);
-                lineNumbers.scrollTop = textarea.scrollTop;
-            }
-
-            setTimeout(() => { isScrolling = false; }, 50);
-        }
-
-        function renderOutline(markdownText) {
-            const lines = markdownText.split('\n');
-            const container = document.getElementById('outline-container');
-            container.innerHTML = '';
-            let outlineCount = 0;
-
-            lines.forEach((line, index) => {
-                let level = 0;
-                let text = "";
-                if (line.startsWith('# ')) { level = 1; text = line.slice(2); }
-                else if (line.startsWith('## ')) { level = 2; text = line.slice(3); }
-                else if (line.startsWith('### ')) { level = 3; text = line.slice(4); }
-                else if (line.startsWith('#### ')) { level = 4; text = line.slice(5); }
-
-                if (level > 0) {
-                    outlineCount++;
-                    const item = document.createElement('div');
-                    item.className = `cursor-pointer hover:text-white text-obsidian-textMuted transition-colors font-medium hover:underline py-0.5`;
-                    item.style.paddingLeft = `${(level - 1) * 12}px`;
-                    item.innerHTML = `<span class="text-obsidian-accent font-mono mr-1">H${level}</span> ${escapeHTML(text)}`;
-                    item.onclick = function() { scrollEditorToLine(index); };
-                    container.appendChild(item);
-                }
-            });
-
-            if (outlineCount === 0) {
-                container.innerHTML = `<p class="text-neutral-500 italic">${i18n[currentLang].noHeadings}</p>`;
-            }
-        }
-
-        function scrollEditorToLine(lineIndex) {
-            const textarea = document.getElementById('markdown-textarea');
-            const targetPct = lineIndex / textarea.value.split('\n').length;
-            textarea.scrollTop = targetPct * (textarea.scrollHeight - textarea.clientHeight);
-
-            const targetHeader = document.getElementById(`heading-${lineIndex}`);
-            if (targetHeader) targetHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-
-        function updateChecklistProgress(markdownText) {
-            let total = 0;
-            let checked = 0;
-
-            markdownText.split('\n').forEach(line => {
-                if (line.match(/^(\s*)-\s*\[\s*\]/)) total++;
-                else if (line.match(/^(\s*)-\s*\[[xX]\]/)) { total++; checked++; }
-            });
-
-            const percentage = total > 0 ? Math.round((checked / total) * 100) : 0;
-            const bar = document.getElementById('progress-bar-fill');
-            const text = document.getElementById('progress-text');
-            const header = document.getElementById('file-progress-header');
-
-            if (total === 0) {
-                header.classList.add('hidden');
-            } else {
-                header.classList.remove('hidden');
-                bar.style.width = `${percentage}%`;
-                text.innerHTML = currentLang === 'pt-br' 
-                    ? `<span class="text-white">${checked}</span> de <span class="text-gray-400">${total}</span> objetivos completados (${percentage}%)`
-                    : `<span class="text-white">${checked}</span> of <span class="text-gray-400">${total}</span> checklist objectives completed (${percentage}%)`;
-            }
-        }
-
-        function updateGlobalProgressTracker() {
-            let grandTotal = 0;
-            let grandChecked = 0;
-            Object.values(vault).forEach(note => {
-                note.content.split('\n').forEach(line => {
-                    if (line.match(/^(\s*)-\s*\[\s*\]/)) grandTotal++;
-                    else if (line.match(/^(\s*)-\s*\[[xX]\]/)) { grandTotal++; grandChecked++; }
-                });
-            });
-            const percentage = grandTotal > 0 ? Math.round((grandChecked / grandTotal) * 100) : 0;
-            document.getElementById('global-stats-pct').innerText = `${percentage}%`;
-            document.getElementById('global-stats-bar').style.width = `${percentage}%`;
-        }
-
-        function renderVaultList() {
-            const container = document.getElementById('note-list');
-            if (!container) return;
-            container.innerHTML = '';
-
-            Object.keys(vault).forEach(key => {
-                const note = vault[key];
-                if (searchFilter && !note.title.toLowerCase().includes(searchFilter.toLowerCase())) return;
-
-                const isActive = key === activeNoteKey;
-                const wrapper = document.createElement('div');
-                wrapper.className = `group flex items-center justify-between px-2 py-1.5 rounded text-sm cursor-pointer transition-all ${isActive ? 'bg-obsidian-active border-l-2 border-obsidian-accent text-white font-medium' : 'text-gray-400 hover:bg-neutral-800/50 hover:text-white'}`;
-                wrapper.setAttribute('data-note-key', key);
-
-                const infoBlock = document.createElement('div');
-                infoBlock.className = 'flex items-center gap-2 overflow-hidden flex-1';
-                infoBlock.onclick = () => selectNote(key);
-                infoBlock.ondblclick = (e) => startInlineRename(e, key);
-                infoBlock.innerHTML = `<i class="fa-regular fa-file-lines shrink-0 text-neutral-500"></i><span class="truncate pr-1 text-xs select-none" id="label-${key}">${escapeHTML(note.title)}</span>`;
-
-                const actions = document.createElement('div');
-                actions.className = 'opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-opacity shrink-0';
-                actions.innerHTML = `
-                    <button onclick="downloadNote(event, '${key}')" class="p-1 text-gray-400 hover:text-obsidian-accent hover:bg-neutral-700/50 rounded" title="${i18n[currentLang].downloadTooltip}"><i class="fa-solid fa-download text-[10px]"></i></button>
-                    <button onclick="startRenameFromIcon(event, '${key}')" class="p-1 text-gray-400 hover:text-obsidian-accent hover:bg-neutral-700/50 rounded" title="${currentLang === 'pt-br' ? 'Renomear Nota' : 'Rename Note'}"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                    <button onclick="triggerDeleteNote(event, '${key}')" class="p-1 text-gray-400 hover:text-red-400 hover:bg-neutral-700/50 rounded" title="${currentLang === 'pt-br' ? 'Excluir Nota' : 'Delete Note'}"><i class="fa-solid fa-trash-can text-[10px]"></i></button>
-                `;
-
-                wrapper.appendChild(infoBlock);
-                wrapper.appendChild(actions);
-                container.appendChild(wrapper);
-            });
-            updateGlobalProgressTracker();
-        }
-
-        function filterNotes() {
-            searchFilter = document.getElementById('note-search').value;
-            renderVaultList();
-        }
-
-        function selectNote(key) {
-            activeNoteKey = key;
-            saveVaultLocalOnly(); // Does NOT broadcast content payload to network unnecessarily 
-            renderVaultList();
-            loadActiveNote();
-            
-            // Clean up any pending navigation toast invites targeted to the note we just navigated to
-            document.querySelectorAll('[id^="toast-nav-"]').forEach(toast => {
-                if (toast.dataset.targetNote === key) toast.remove();
-            });
-        }
-
-        function createNewNote() {
-            const id = "note_" + Date.now();
-            vault[id] = {
-                title: currentLang === 'pt-br' ? "Nota Sem Título" : "Untitled Note",
-                content: currentLang === 'pt-br' ? "# Nota Sem Título\n\n- [ ] Novas tarefas aqui\n- [ ] Dê um duplo-clique no título no menu lateral para renomear!" : "# Untitled Note\n\n- [ ] New objectives go here\n- [ ] Double click the title in explorer to rename"
-            };
-            activeNoteKey = id;
-            saveVaultStructure();
-            renderVaultList();
-            loadActiveNote();
-            showToast(i18n[currentLang].toastCreated, "success");
-        }
-
-        function startInlineRename(event, key) {
-            event.stopPropagation();
-            const label = document.getElementById(`label-${key}`);
-            const originalTitle = vault[key].title;
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = originalTitle;
-            input.className = 'bg-obsidian-bg border border-obsidian-accent text-white px-1 py-0.5 rounded outline-none text-xs w-full font-sans';
-            
-            input.onblur = () => finishInlineRename(key, input.value, originalTitle);
-            input.onkeydown = (e) => {
-                if (e.key === 'Enter') input.blur();
-                else if (e.key === 'Escape') { input.value = originalTitle; input.blur(); }
-            };
-
-            label.replaceWith(input);
-            input.focus();
-            input.select();
-        }
-
-        function startRenameFromIcon(event, key) {
-            event.stopPropagation();
-            startInlineRename(event, key);
-        }
-
-        function finishInlineRename(key, newTitle, originalTitle) {
-            const cleanedTitle = newTitle.trim() || originalTitle;
-            vault[key].title = cleanedTitle;
-            saveVaultStructure();
-            renderVaultList();
-            if (activeNoteKey === key) loadActiveNote();
-        }
-
-        function triggerDeleteNote(event, key) {
-            event.stopPropagation();
-            deleteCandidateKey = key;
-            document.getElementById('delete-modal-note-title').innerText = vault[key].title;
-            document.getElementById('delete-modal').classList.remove('hidden');
-            document.getElementById('delete-modal').classList.add('flex');
-        }
-
-        function closeDeleteModal() {
-            deleteCandidateKey = null;
-            document.getElementById('delete-modal').classList.add('hidden');
-            document.getElementById('delete-modal').classList.remove('flex');
-        }
-
-        function executeDeleteNote() {
-            if (!deleteCandidateKey) return;
-            const title = vault[deleteCandidateKey].title;
-            delete vault[deleteCandidateKey];
-            
-            if (activeNoteKey === deleteCandidateKey) {
-                const keys = Object.keys(vault);
-                activeNoteKey = keys.length > 0 ? keys[0] : "";
-            }
-
-            closeDeleteModal();
-            saveVaultStructure();
-            renderVaultList();
-            loadActiveNote();
-            showToast(i18n[currentLang].toastDeleted.replace("{title}", title), "info");
-        }
-
-        /* Diff-Match-Patch Input Source Capture */
-        function handleSourceInput() {
-            const textarea = document.getElementById('markdown-textarea');
-            const newText = textarea.value;
-            const oldText = vault[activeNoteKey].content;
-
-            vault[activeNoteKey].content = newText;
-            saveVaultLocalOnly();
-
-            if (window.broadcastNotePatch) {
-                window.broadcastNotePatch(activeNoteKey, oldText, newText);
-            }
-
-            renderActiveNote(); // Triggers updateLineNumbers & syncing
-        }
-
-        function handleTitleInput() {
-            const title = document.getElementById('note-title-input').value.trim();
-            if (title) {
-                vault[activeNoteKey].title = title;
-                saveVaultStructure();
-                renderVaultList();
-                document.getElementById('breadcrumb-filename').innerText = title + ".md";
-                document.getElementById('active-tab-title').innerText = title;
-            }
-        }
-
-        function setViewMode(mode) {
-            viewMode = mode;
-            const editor = document.getElementById('editor-container');
-            const preview = document.getElementById('preview-container');
-            const splitter = document.getElementById('pane-splitter');
-            
-            ['btn-edit-mode', 'btn-reading-mode', 'btn-split-mode'].forEach(id => {
-                document.getElementById(id).className = "px-2.5 py-1 text-xs font-medium rounded transition-colors text-obsidian-textMuted hover:text-white";
-            });
-
-            if (mode === 'edit') {
-                editor.classList.remove('hidden'); preview.classList.add('hidden'); splitter.classList.add('hidden');
-                document.getElementById('btn-edit-mode').classList.add('bg-obsidian-active', 'text-white');
-            } else if (mode === 'reading') {
-                editor.classList.add('hidden'); preview.classList.remove('hidden'); splitter.classList.add('hidden');
-                document.getElementById('btn-reading-mode').classList.add('bg-obsidian-active', 'text-white');
-            } else {
-                editor.classList.remove('hidden'); preview.classList.remove('hidden'); splitter.classList.remove('hidden');
-                document.getElementById('btn-split-mode').classList.add('bg-obsidian-active', 'text-obsidian-accent');
-            }
-        }
-
-        function toggleSidebar(id) {
-            const bar = document.getElementById(id);
-            if (!bar) return;
-            const isLeft = id === 'left-sidebar';
-            const isCollapsed = bar.classList.contains('w-0');
-            
-            if (isCollapsed) {
-                bar.classList.remove('w-0', 'overflow-hidden', isLeft ? 'border-r-0' : 'border-l-0');
-                bar.classList.add('w-64', isLeft ? 'border-r' : 'border-l');
-                localStorage.setItem(`sidebar_${id}_collapsed`, 'false');
-            } else {
-                bar.classList.remove('w-64', isLeft ? 'border-r' : 'border-l');
-                bar.classList.add('w-0', 'overflow-hidden', isLeft ? 'border-r-0' : 'border-l-0');
-                localStorage.setItem(`sidebar_${id}_collapsed`, 'true');
-            }
-            updateToggleButtonState(id, !isCollapsed);
-        }
-
-        function initSidebars() {
-            applySidebarState('left-sidebar', localStorage.getItem('sidebar_left-sidebar_collapsed') !== 'false');
-            applySidebarState('right-sidebar', localStorage.getItem('sidebar_right-sidebar_collapsed') !== 'false');
-        }
-
-        function applySidebarState(id, collapsed) {
-            const bar = document.getElementById(id);
-            if (!bar) return;
-            const isLeft = id === 'left-sidebar';
-            if (collapsed) {
-                bar.classList.remove('w-64', isLeft ? 'border-r' : 'border-l');
-                bar.classList.add('w-0', 'overflow-hidden', isLeft ? 'border-r-0' : 'border-l-0');
-            } else {
-                bar.classList.remove('w-0', 'overflow-hidden', isLeft ? 'border-r-0' : 'border-l-0');
-                bar.classList.add('w-64', isLeft ? 'border-r' : 'border-l');
-            }
-            updateToggleButtonState(id, collapsed);
-        }
-
-        function updateToggleButtonState(id, isCollapsed) {
-            const btn = document.getElementById(id === 'left-sidebar' ? 'btn-toggle-left' : 'btn-toggle-right');
-            if (!btn) return;
-            btn.className = isCollapsed 
-                ? "p-1.5 hover:bg-obsidian-active rounded transition-all border border-transparent text-obsidian-textMuted hover:text-white"
-                : "p-1.5 bg-obsidian-active rounded transition-all border border-obsidian-border text-obsidian-accent hover:text-obsidian-accentHover";
-        }
-
-        function openCommandPalette() {
-            document.getElementById('command-palette').classList.remove('hidden');
-            document.getElementById('command-palette').classList.add('flex');
-            const searchInput = document.getElementById('palette-search');
-            searchInput.value = ''; searchInput.focus();
-            handlePaletteSearch();
-        }
-
-        function closeCommandPalette() {
-            document.getElementById('command-palette').classList.add('hidden');
-            document.getElementById('command-palette').classList.remove('flex');
-        }
-
-        function handlePaletteSearch() {
-            const query = document.getElementById('palette-search').value.toLowerCase();
-            const container = document.getElementById('palette-results');
-            container.innerHTML = '';
-            let matches = 0;
-
-            Object.keys(vault).forEach(key => {
-                if (vault[key].title.toLowerCase().includes(query)) {
-                    matches++;
-                    const row = document.createElement('div');
-                    row.className = 'p-2.5 hover:bg-obsidian-active rounded-lg cursor-pointer transition-colors text-sm flex items-center justify-between text-white';
-                    row.onclick = () => { selectNote(key); closeCommandPalette(); };
-                    row.innerHTML = `<div class="flex items-center gap-2"><i class="fa-regular fa-file-lines text-obsidian-accent"></i><span>${escapeHTML(vault[key].title)}</span></div><span class="text-[10px] text-obsidian-textMuted uppercase font-mono">${i18n[currentLang].selectFile}</span>`;
-                    container.appendChild(row);
-                }
-            });
-
-            if (vault[activeNoteKey]) {
-                vault[activeNoteKey].content.split('\n').forEach((line, index) => {
-                    let level = 0;
-                    if (line.startsWith('# ')) level = 1; else if (line.startsWith('## ')) level = 2; else if (line.startsWith('### ')) level = 3; else if (line.startsWith('#### ')) level = 4;
-
-                    if (level > 0) {
-                        const headingText = line.replace(/^#+\s+/, '');
-                        if (headingText.toLowerCase().includes(query)) {
-                            matches++;
-                            const row = document.createElement('div');
-                            row.className = 'p-2.5 hover:bg-obsidian-active rounded-lg cursor-pointer transition-colors text-sm flex items-center justify-between text-neutral-300';
-                            row.onclick = () => { scrollEditorToLine(index); closeCommandPalette(); };
-                            row.innerHTML = `<div class="flex items-center gap-2 pl-4"><i class="fa-solid fa-list-ul text-neutral-500"></i><span>${escapeHTML(headingText)}</span></div><span class="text-[10px] text-neutral-500 uppercase font-mono">${i18n[currentLang].jumpToSec} (H${level})</span>`;
-                            container.appendChild(row);
-                        }
-                    }
-                });
-            }
-
-            if (matches === 0) container.innerHTML = `<p class="text-neutral-500 italic text-xs text-center p-4">${i18n[currentLang].noMatches}</p>`;
-        }
-
-        window.shareSessionLink = function() {
-            let roomId = new URLSearchParams(window.location.search).get('room') || (myPeer && myPeer.id);
-            if (!roomId) return showToast(currentLang === 'pt-br' ? "Canal P2P não inicializado. Tente novamente em instantes." : "P2P channel not initialized yet. Try again in a moment.", "error");
-
-            const tempInput = document.createElement("input");
-            document.body.appendChild(tempInput);
-            tempInput.value = window.location.origin + window.location.pathname + "?room=" + roomId;
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
-
-            showToast(currentLang === 'pt-br' ? "Link de sessão copiado! Envie para seus companheiros." : "Session link copied to clipboard! Share it with your friends.", "success");
-        };
-
-        /* Markdown note downloader module */
-        window.downloadNote = function(event, key) {
-            if (event) event.stopPropagation();
-            const note = vault[key];
-            if (!note) return;
-
-            try {
-                const blob = new Blob([note.content], { type: 'text/markdown;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const tempLink = document.createElement('a');
-                tempLink.href = url;
-                tempLink.setAttribute('download', `${note.title || 'untitled'}.md`);
-                document.body.appendChild(tempLink);
-                tempLink.click();
-                document.body.removeChild(tempLink);
-                URL.revokeObjectURL(url);
-                
-                showToast(i18n[currentLang].toastDownloaded.replace("{title}", note.title), "success");
-            } catch(e) {
-                console.error("Markdown file download failed", e);
-                showToast(currentLang === 'pt-br' ? "Falha ao baixar a nota." : "Failed to download note.", "error");
-            }
-        };
-
-        window.downloadActiveNote = function() {
-            if (activeNoteKey) {
-                window.downloadNote(null, activeNoteKey);
-            }
-        };
-
-        // Standard auto-disappearing Toast stack logic
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `p-3 rounded-lg shadow-2xl flex items-center justify-between text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 select-none ${type === 'success' ? 'bg-obsidian-accentBg text-obsidian-accentMuted border border-obsidian-accentBorder shadow-xl shadow-obsidian-accent/10' : 'bg-neutral-800/90 text-neutral-200 border border-neutral-700'}`;
-            toast.innerHTML = `<span>${message}</span><button class="ml-3 hover:text-white" onclick="this.parentElement.remove()">&times;</button>`;
-            container.appendChild(toast);
-            
-            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
-            setTimeout(() => { toast.classList.add('opacity-0', 'translate-y-2'); setTimeout(() => toast.remove(), 300); }, 4000);
-        }
-
-        // Custom Peer Navigation Toast module mapping
-        window.showNavigationToast = function(peerId, peerName, targetNoteKey) {
-            const existingId = `toast-nav-${peerId}`;
-            let toast = document.getElementById(existingId);
-            
-            // Override existing navigation toast for this peer rapidly if they're moving
-            if (toast) {
-                clearTimeout(parseInt(toast.dataset.timeoutId));
-                toast.remove();
-            }
-            
-            const targetNoteName = vault[targetNoteKey]?.title || "another note";
-            const container = document.getElementById('toast-container');
-            toast = document.createElement('div');
-            toast.id = existingId;
-            toast.dataset.targetNote = targetNoteKey;
-            toast.className = `p-3.5 rounded-lg shadow-2xl flex flex-col gap-2 text-xs font-semibold transition-all duration-300 transform translate-y-2 opacity-0 select-none bg-obsidian-active text-white border border-obsidian-accent/60 shadow-xl shadow-obsidian-accent/10 z-50`;
-            
-            const msg = currentLang === 'pt-br' ? 
-                `<span class="truncate"><b>${escapeHTML(peerName)}</b> foi para <br><span class="text-obsidian-accent">${escapeHTML(targetNoteName)}</span></span>` : 
-                `<span class="truncate"><b>${escapeHTML(peerName)}</b> moved to <br><span class="text-obsidian-accent">${escapeHTML(targetNoteName)}</span></span>`;
-                
-            const btnLabel = currentLang === 'pt-br' ? 'Acompanhar' : 'Follow';
-                
-            toast.innerHTML = `
-                <div class="flex items-start justify-between gap-4">
-                    <span class="flex items-center gap-3 overflow-hidden"><i class="fa-solid fa-person-walking-arrow-right text-obsidian-accent shrink-0 text-base"></i> <div class="leading-tight">${msg}</div></span>
-                    <button class="text-gray-400 hover:text-white shrink-0 -mt-1 -mr-1 p-1" onclick="this.closest('[id^=toast-nav-]').remove()"><i class="fa-solid fa-times text-sm"></i></button>
+            <div class="p-2 border-t border-obsidian-border bg-black/20 flex items-center justify-between text-[10px] text-neutral-500 px-4">
+                <div class="flex items-center gap-3">
+                    <span><kbd class="bg-neutral-800 px-1 rounded">↑↓</kbd> to navigate</span>
+                    <span><kbd class="bg-neutral-800 px-1 rounded">↵</kbd> to select</span>
                 </div>
-                <button onclick="joinPeerNote('${targetNoteKey}', '${existingId}')" class="w-full py-2 mt-1.5 bg-obsidian-accent hover:bg-obsidian-accentHover text-white rounded transition-colors font-bold tracking-wide uppercase text-[10px]">${btnLabel}</button>
-            `;
-            
-            container.appendChild(toast);
-            
-            setTimeout(() => toast.classList.remove('opacity-0', 'translate-y-2'), 10);
-            
-            // Visible length adjusted to a longer 20-seconds for peer navigations 
-            const timeout = setTimeout(() => {
-                if (document.getElementById(existingId)) {
-                    toast.classList.add('opacity-0', 'translate-y-2'); 
-                    setTimeout(() => toast.remove(), 300);
+                <span><kbd class="bg-neutral-800 px-1 rounded">esc</kbd> to close</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[300] hidden items-center justify-center p-4">
+        <div class="bg-obsidian-sidebar border border-obsidian-border rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-5 border-b border-obsidian-border flex items-center justify-between">
+                <h3 id="profile-modal-header" class="text-base font-bold text-white">Configure Profile</h3>
+                <button onclick="closeProfileModal()" class="text-neutral-500 hover:text-white transition-colors"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="p-6 flex flex-col gap-5">
+                <p id="profile-modal-desc" class="text-xs text-neutral-400 leading-relaxed">Set your permanent identifier and nickname for this notebook. Changes take effect immediately across all connected peers.</p>
+                
+                <div>
+                    <label id="profile-label-nick" class="block text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-1.5">Nickname</label>
+                    <input id="profile-nickname-input" type="text" class="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white focus:border-obsidian-accent outline-none transition-all" placeholder="Enter nickname...">
+                </div>
+
+                <div>
+                    <label id="profile-label-color" class="block text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2.5">Cursor & Avatar Color</label>
+                    <div class="flex flex-wrap gap-2.5">
+                        <button onclick="selectProfileColor('#a855f7')" data-color="#a855f7" class="profile-color-dot w-8 h-8 rounded-full bg-[#a855f7] border-2 border-transparent transition-all relative"></button>
+                        <button onclick="selectProfileColor('#10b981')" data-color="#10b981" class="profile-color-dot w-8 h-8 rounded-full bg-[#10b981] border-2 border-transparent transition-all relative"></button>
+                        <button onclick="selectProfileColor('#3b82f6')" data-color="#3b82f6" class="profile-color-dot w-8 h-8 rounded-full bg-[#3b82f6] border-2 border-transparent transition-all relative"></button>
+                        <button onclick="selectProfileColor('#f59e0b')" data-color="#f59e0b" class="profile-color-dot w-8 h-8 rounded-full bg-[#f59e0b] border-2 border-transparent transition-all relative"></button>
+                        <button onclick="selectProfileColor('#ef4444')" data-color="#ef4444" class="profile-color-dot w-8 h-8 rounded-full bg-[#ef4444] border-2 border-transparent transition-all relative"></button>
+                        <button onclick="selectProfileColor('#ec4899')" data-color="#ec4899" class="profile-color-dot w-8 h-8 rounded-full bg-[#ec4899] border-2 border-transparent transition-all relative"></button>
+                        <div class="w-8 h-8 rounded-full border-2 border-neutral-800 flex items-center justify-center bg-neutral-900 overflow-hidden relative cursor-pointer group">
+                            <i class="fa-solid fa-eye-dropper text-[10px] text-neutral-500 group-hover:text-white transition-colors"></i>
+                            <input type="color" id="profile-color-picker" oninput="selectProfileColor(this.value)" class="absolute inset-0 opacity-0 cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-black/20 flex gap-3 justify-end border-t border-obsidian-border">
+                <button onclick="saveProfile()" class="w-full py-2.5 bg-obsidian-accent hover:bg-obsidian-accentHover text-white rounded-lg text-xs font-bold transition-all shadow-lg shadow-obsidian-accent/20">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts: Modular & Dependencies -->
+    <script src="js/i18n.js"></script>
+    <script src="js/p2p.js"></script>
+    <script src="js/vault.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/ui.js"></script>
+
+    <!-- Caret Coordinates helper remains for positioning cursors/mentions -->
+    <script>
+        (function(){
+            var properties = [
+                'direction', 'boxSizing', 'width', 'height', 'overflowX', 'overflowY',
+                'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'borderStyle',
+                'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+                'fontStyle', 'fontVariant', 'fontWeight', 'fontStretch', 'fontSize', 'fontSizeAdjust', 'lineHeight', 'fontFamily',
+                'textAlign', 'textTransform', 'textIndent', 'textDecoration', 'letterSpacing', 'wordSpacing', 'tabSize', 'MozTabSize'
+            ];
+            var isBrowser = (typeof window !== 'undefined');
+            var isFirefox = (isBrowser && window.mozInnerScreenX != null);
+
+            function getCaretCoordinates(element, position, options) {
+                var debug = options && options.debug || false;
+                if (debug) {
+                    var el = document.getElementById('input-textarea-caret-position-mirror-div');
+                    if (el) el.parentNode.removeChild(el);
                 }
-            }, 20000);
-            
-            toast.dataset.timeoutId = timeout;
-        };
-
-        window.joinPeerNote = function(noteKey, toastId) {
-            const toast = document.getElementById(toastId);
-            if (toast) {
-                clearTimeout(parseInt(toast.dataset.timeoutId));
-                toast.remove();
+                var div = document.createElement('div');
+                div.id = 'input-textarea-caret-position-mirror-div';
+                document.body.appendChild(div);
+                var style = div.style;
+                var computed = window.getComputedStyle ? window.getComputedStyle(element) : element.currentStyle;
+                var isInput = element.nodeName === 'INPUT';
+                style.whiteSpace = 'pre-wrap';
+                if (!isInput) style.wordWrap = 'break-word';
+                style.position = 'absolute';
+                if (!debug) style.visibility = 'hidden';
+                properties.forEach(function (prop) {
+                    if (isInput && prop === 'lineHeight') {
+                        style.lineHeight = computed.height;
+                    } else {
+                        style.lineHeight = computed.lineHeight;
+                        style[prop] = computed[prop];
+                    }
+                });
+                if (isFirefox) {
+                    if (element.scrollHeight > element.clientHeight) style.overflowY = 'scroll';
+                } else {
+                    style.overflowY = 'hidden';
+                }
+                div.textContent = element.value.substring(0, position);
+                if (isInput) div.textContent = div.textContent.replace(/\s/g, '\u00a0');
+                var span = document.createElement('span');
+                span.textContent = element.value.substring(position) || '.';
+                div.appendChild(span);
+                var coordinates = {
+                    top: span.offsetTop + parseInt(computed['borderTopWidth']),
+                    left: span.offsetLeft + parseInt(computed['borderLeftWidth']),
+                    height: parseInt(computed['lineHeight'])
+                };
+                if (debug) {
+                    span.style.backgroundColor = '#aaa';
+                } else {
+                    document.body.removeChild(div);
+                }
+                return coordinates;
             }
-            if (vault[noteKey]) {
-                selectNote(noteKey);
-            }
-        };
-
-        function getRoadmapMarkdown(lang) {
-            if (lang === 'pt-br') {
-                return `# 🚀 Roteiro de Lançamento do Projeto\n\n## 📅 Fase 1: Pesquisa & Descoberta\n- [ ] **Definir requisitos** e o escopo do MVP do projeto.\n- [ ] **Criar wireframes** e esboços de design para revisão da equipe.\n- [ ] **Alinhar a stack tecnológica** e os modelos de banco de dados.\n\n## 💻 Fase 2: Design & Desenvolvimento\n- [ ] **Configurar a estrutura do código** e roteamento básico.\n- [ ] **Implementar motores de colaboração em tempo real** (sincronização P2P).\n- [ ] **Otimizar métricas de performance** para melhor experiência do usuário.\n\n## 🚀 Fase 3: Lançamento & Iteração\n- [ ] **Realizar testes beta** com usuários internos.\n- [ ] **Coletar feedback dos usuários** e priorizar melhorias.\n- [ ] **Implantar o projeto Caderno v1.0** em produção!`;
-            } else {
-                return `# 🚀 Project Launch Roadmap\n\n## 📅 Phase 1: Research & Discovery\n- [ ] **Define requirements** and scope the project MVP.\n- [ ] **Create wireframes** and design mockups for team review.\n- [ ] **Align on the tech stack** and database models.\n\n## 💻 Phase 2: Design & Development\n- [ ] **Set up codebase structure** and basic routing.\n- [ ] **Implement real-time collaboration engines** (P2P synchronization).\n- [ ] **Optimize performance metrics** for peak user interaction.\n\n## 🚀 Phase 3: Launch & Iteration\n- [ ] **Conduct beta testing** with internal users.\n- [ ] **Gather user feedback** and prioritize enhancements.\n- [ ] **Deploy project Caderno v1.0** to production!`;
-            }
-        }
-
-        function getWelcomeGuideMarkdown(lang) {
-            if (lang === 'pt-br') {
-                return `# Bem-vindo ao Caderno 📓\n\n### 👥 Sincronização P2P em Tempo Real\n1. **Sessão Compartilhada:** Envie o link de colaboração para a sua equipe.\n2. **Resolução de Conflitos:** Edições simultâneas são mescladas de forma inteligente e automática.\n3. **Caret Dinâmico:** Seu cursor de digitação acompanha as edições dos seus colegas sem se perder!\n4. **Cursores ao Vivo:** Veja com precisão cirúrgica onde cada membro do time está editando em tempo real.`;
-            } else {
-                return `# Welcome to Caderno 📓\n\n### 👥 Real-Time P2P Differential Sync\n1. **Shared Session:** Send the collaboration link to your team.\n2. **Conflict Resolution:** Simultaneous edits are now merged intelligently in real-time.\n3. **Dynamic Caret:** Your text cursor shifts gracefully while others type.\n4. **Live Presence Cursors:** See exactly where your team members are editing in real-time.`;
-            }
-        }
+            window.getCaretCoordinates = getCaretCoordinates;
+        }());
     </script>
 </body>
 </html>

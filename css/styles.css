@@ -1,0 +1,199 @@
+:root {
+    --accent-color: #a855f7;
+    --accent-hover: #c084fc;
+    --accent-muted: #d8b4fe;
+    --accent-bg: rgba(168, 85, 247, 0.15);
+    --accent-border: rgba(168, 85, 247, 0.3);
+    --accent-gradient-start: #a855f7;
+    --accent-gradient-end: #6366f1;
+}
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #18181c;
+    color: #e2e8f0;
+}
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #18181c;
+}
+::-webkit-scrollbar-thumb {
+    background: #2d2d34;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f4a;
+}
+.markdown-preview h1 {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid #31313a;
+    padding-bottom: 0.25rem;
+}
+.markdown-preview h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-preview h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-preview h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-top: 1rem;
+    margin-bottom: 0.25rem;
+}
+.markdown-preview p {
+    margin-bottom: 0.75rem;
+    line-height: 1.625;
+    color: #94a3b8;
+}
+.task-item {
+    transition: background-color 0.2s;
+}
+.obsidian-checkbox {
+    appearance: none;
+    width: 1.1rem;
+    height: 1.1rem;
+    border: 2px solid #52525b;
+    border-radius: 4px;
+    background-color: transparent;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.obsidian-checkbox::before {
+    content: "";
+    width: 0.55rem;
+    height: 0.55rem;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em #ffffff;
+    transform-origin: center;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+.obsidian-checkbox:checked {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+.obsidian-checkbox:checked::before {
+    transform: scale(1);
+}
+.line-numbers div {
+    transition: color 0.15s;
+}
+
+/* Collaborative Cursor Styles */
+.remote-cursor {
+    position: absolute;
+    width: 2px;
+    background-color: transparent;
+    pointer-events: none;
+    z-index: 50;
+    transition: top 0.1s linear, left 0.1s linear;
+}
+.remote-cursor-flag {
+    position: absolute;
+    top: -16px;
+    left: 0;
+    padding: 2px 5px;
+    border-radius: 4px;
+    border-bottom-left-radius: 0;
+    color: white;
+    font-size: 10px;
+    font-family: 'Inter', sans-serif;
+    line-height: 1;
+    font-weight: 600;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+#caret-mirror {
+    position: absolute;
+    top: 0;
+    left: -9999px;
+    visibility: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+/* Git Blame Highlights styling */
+.blame-highlight {
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
+}
+
+/* Spoiler Markdown Styles */
+.markdown-spoiler {
+    background-color: #0f0f12;
+    color: #0f0f12;
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 1px 5px;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    user-select: none;
+    border: 1px dashed #2d2d35;
+}
+.markdown-spoiler:hover {
+    border-color: var(--accent-color);
+}
+.markdown-spoiler.revealed {
+    background-color: rgba(255, 255, 255, 0.08);
+    color: #f1f5f9;
+    user-select: text;
+    border: 1px solid #3f3f46;
+}
+
+#editor-overlays {
+    color: transparent; /* Default to transparent, children will set visible color */
+}
+#editor-overlays div {
+    min-height: 1.5rem; /* Match leading-6 */
+}
+
+#markdown-textarea {
+    caret-color: var(--accent-color);
+    color: transparent; /* Controlled via JS per mode */
+    transition: top 0.08s ease-out; /* Smooth follow */
+}
+
+.hybrid-backdrop {
+    position: absolute;
+    inset: 0;
+    padding: 1rem; /* Match textarea p-4 */
+    pointer-events: none;
+    z-index: 5;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.rendered-line-block {
+    position: relative;
+    width: 100%;
+}
+
+.rendered-line-block.active-edit {
+    visibility: hidden;
+}
+
+/* Used for overlay masking inside the textarea view */
+.editor-spoiler {
+    transition: all 0.2s ease;
+}.wikilink-broken {
+    text-decoration: underline wavy #ef4444;
+    cursor: help;
+}
